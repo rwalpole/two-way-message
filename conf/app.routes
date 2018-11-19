@@ -3,4 +3,4 @@
 GET        /hello-world                         uk.gov.hmrc.twowaymessage.controllers.MicroserviceHelloWorld.hello
 
 
-POST       /message/customer/:queueId/submit    uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.
+POST       /message/customer/:queueId/submit   uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createMessage(queueId: String)
