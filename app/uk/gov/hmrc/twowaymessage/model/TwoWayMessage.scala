@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.twowaymessage.controllers
+package uk.gov.hmrc.twowaymessage.model
 
-import com.google.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.play.bootstrap.controller.{BackendBaseController, BackendController, BaseController}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import play.api.mvc._
+import play.api.libs.json.Json
+import reactivemongo.bson.BSONObjectID
 
-import scala.concurrent.Future
+case class TwoWayMessage(recipient: Recipient,
+                         subject: String,
+                         content: Option[String] = None
+                        ) {
 
-@Singleton()
-class MicroserviceHelloWorld @Inject()() extends InjectedController {
-
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
-
+  //{
+  // "recipient":{
+  //   "taxIdentifier":{
+  //     "name":"HMRC_ID",
+  //     "value":"AB123456C"
+  //   },
+  //   "email":"someEmail@test.com"
+  // },
+  // "subject":"QUESTION",
+  // "content":"Some base64-encoded HTML",
+  //}
 }

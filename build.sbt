@@ -14,3 +14,8 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
   .settings(resolvers += Resolver.jcenterRepo)
+  .settings(libraryDependencies ++= Seq( "uk.gov.hmrc" % "bootstrap-play-26_2.11" % "0.31.0",
+                                         "uk.gov.hmrc" % "domain_2.11"            % "5.2.0"))
+
+
+

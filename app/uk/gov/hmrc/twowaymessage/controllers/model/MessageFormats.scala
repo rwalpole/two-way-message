@@ -14,21 +14,6 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.twowaymessage.controllers
+package uk.gov.hmrc.twowaymessage.controllers.model
 
-import com.google.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.play.bootstrap.controller.{BackendBaseController, BackendController, BaseController}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import play.api.mvc._
-
-import scala.concurrent.Future
-
-@Singleton()
-class MicroserviceHelloWorld @Inject()() extends InjectedController {
-
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
-
-}
+object MessageFormats
