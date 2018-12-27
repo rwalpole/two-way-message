@@ -25,13 +25,14 @@ import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 import play.api.mvc.Results._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model.CommonFormats._
 import uk.gov.hmrc.twowaymessage.model.Error
 import uk.gov.hmrc.twowaymessage.model._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implicit ec: ExecutionContext) {
 
@@ -39,15 +40,27 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
 
   def post(twoWayMessage: TwoWayMessage): Future[Result] = {
     val body = createJsonForMessage(randomUUID.toString, twoWayMessage)
-    messageConnector.postMessage(body) map handleResponse
+    messageConnector.postMessage(body) map {
+      handleResponse
+    } recover {
+      case e: Upstream4xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
+      case e: Upstream5xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
+      case e: HttpException => BadGateway(Json.obj("error" -> e.responseCode, "message" -> e.message))
+    }
   }
 
   def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
-    for {
+    (for {
       metadata <- messageConnector.getMessageMetadata(replyTo)
       body = createJsonForReply(randomUUID.toString, metadata, twoWayMessageReply, replyTo)
-      response <- messageConnector.postMessage(body)
-    } yield handleResponse(response)
+      resp <- messageConnector.postMessage(body)
+    } yield resp) map {
+      handleResponse
+    } recover {
+      case e: Upstream4xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
+      case e: Upstream5xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
+      case e: HttpException => BadGateway(Json.obj("error" -> e.responseCode, "message" -> e.message))
+    }
   }
 
   def handleResponse(response: HttpResponse): Result = response.status match {

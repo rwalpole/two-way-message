@@ -42,7 +42,7 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService)
   def validateAndPostMessage(requestBody: JsValue): Future[Result] =
     requestBody.validate[TwoWayMessage] match {
       case _: JsSuccess[_] => twms.post(requestBody.as[TwoWayMessage])
-      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> "OK", "message" -> JsError.toJson(e))))
+      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> "400", "message" -> JsError.toJson(e))))
   }
 
   // Advisor replying to a customer message
@@ -54,6 +54,6 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService)
   def validateAndPostAdvisorResponse(requestBody: JsValue, replyTo: String): Future[Result] =
     requestBody.validate[TwoWayMessageReply] match {
       case _: JsSuccess[_] => twms.postReply(requestBody.as[TwoWayMessageReply], replyTo)
-      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> "OK", "message" -> JsError.toJson(e))))
+      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> "400", "message" -> JsError.toJson(e))))
   }
 }
