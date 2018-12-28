@@ -17,20 +17,16 @@
 package uk.gov.hmrc.twowaymessage.model
 
 import play.api.libs.json._
+import MessageType._
+import FormId._
 
 object MessageFormat {
 
   import uk.gov.hmrc.twowaymessage.model.CommonFormats._
 
-  implicit val externalRefWrites: OWrites[ExternalRef] = Json.writes[ExternalRef]
-
   implicit val detailsWrites: OWrites[Details] =  Json.writes[Details]
 
-  implicit val externalRef: Reads[ExternalRef] = Json.reads[ExternalRef]
-
-  implicit val details: Reads[Details] = Json.reads[Details]
-
-  implicit val messageReads: Reads[Message] = Json.reads[Message]
+  implicit val externalRefWrites: OWrites[ExternalRef] = Json.writes[ExternalRef]
 
   implicit val messageWrites: OWrites[Message] = Json.writes[Message]
 
@@ -41,11 +37,11 @@ object MessageFormat {
   implicit val messageMetadataReads: Reads[MessageMetadata] = Json.reads[MessageMetadata]
 }
 
-case class Message(externalRef: ExternalRef, recipient: Recipient, messageType: String, subject: String, content: String, details: Details)
+case class Message(externalRef: ExternalRef, recipient: Recipient, messageType: MessageType, subject: String, content: String, details: Details)
 
 case class ExternalRef(id: String, source: String)
 
-case class Details(formId: String, replyTo: Option[String] = None)
+case class Details(formId: FormId, replyTo: Option[String] = None)
 
 final case class TaxIdWithName(name: String, value: String)
 

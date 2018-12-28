@@ -61,10 +61,10 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
       ),
       "someEmail@test.com"
     ),
-    "2wsm-customer",
+    MessageType.Customer,
     "SUBJECT",
     "SGVsbG8gV29ybGQ=",
-    Details("2WSM-question")
+    Details(FormId.Question)
   )
 
   "POST message connector" should {

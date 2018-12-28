@@ -99,15 +99,27 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       result.header.status shouldBe Status.BAD_REQUEST
     }
 
-    "return 201 (Created) when a reply is successfully created in the message service " in {
-      when(mockMessageService.postReply(any[TwoWayMessageReply], any[String]))
+    "return 201 (Created) when an advisor reply is successfully created in the message service " in {
+      when(mockMessageService.postAdvisorReply(any[TwoWayMessageReply], any[String]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(controller.validateAndPostAdvisorResponse(twoWayMessageReplyGood, "replyToId"))
       result.header.status shouldBe Status.CREATED
     }
 
-    "return 400 (Bad Request) if the body is not as per the definition " in {
+    "return 400 (Bad Request) if the advisor reply body is not as per the definition " in {
       val result = await(controller.validateAndPostAdvisorResponse(twoWayMessageBadContent, "replyToId"))
+      result.header.status shouldBe Status.BAD_REQUEST
+    }
+
+    "return 201 (Created) when an customer reply is successfully created in the message service " in {
+      when(mockMessageService.postCustomerReply(any[TwoWayMessageReply], any[String]))
+        .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
+      val result = await(controller.validateAndPostCustomerResponse(twoWayMessageReplyGood, "replyToId"))
+      result.header.status shouldBe Status.CREATED
+    }
+
+    "return 400 (Bad Request) if the customer reply body is not as per the definition " in {
+      val result = await(controller.validateAndPostCustomerResponse(twoWayMessageBadContent, "replyToId"))
       result.header.status shouldBe Status.BAD_REQUEST
     }
 

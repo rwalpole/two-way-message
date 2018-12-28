@@ -38,12 +38,12 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService)
     implicit request => validateAndPostMessage(request.body)
   }
 
-  // Validates the customer's response payload and then posts the message
+  // Validates the customer's message payload and then posts the message
   def validateAndPostMessage(requestBody: JsValue): Future[Result] =
     requestBody.validate[TwoWayMessage] match {
       case _: JsSuccess[_] => twms.post(requestBody.as[TwoWayMessage])
-      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> "400", "message" -> JsError.toJson(e))))
-  }
+      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
+    }
 
   // Advisor replying to a customer message
   def createAdvisorResponse(replyTo: String): Action[JsValue] = Action.async(parse.json) {
@@ -53,7 +53,19 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService)
   // Validates the advisor response payload and then posts the reply
   def validateAndPostAdvisorResponse(requestBody: JsValue, replyTo: String): Future[Result] =
     requestBody.validate[TwoWayMessageReply] match {
-      case _: JsSuccess[_] => twms.postReply(requestBody.as[TwoWayMessageReply], replyTo)
-      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> "400", "message" -> JsError.toJson(e))))
+      case _: JsSuccess[_] => twms.postAdvisorReply(requestBody.as[TwoWayMessageReply], replyTo)
+      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
+    }
+
+  // Customer replying to an advisor's message
+  def createCustomerResponse(queueId: String, replyTo: String): Action[JsValue] = Action.async(parse.json) {
+    implicit request => validateAndPostCustomerResponse(request.body, replyTo)
   }
+
+  // Validates the customer's response payload and then posts the reply
+  def validateAndPostCustomerResponse(requestBody: JsValue, replyTo: String): Future[Result] =
+    requestBody.validate[TwoWayMessageReply] match {
+      case _: JsSuccess[_] => twms.postCustomerReply(requestBody.as[TwoWayMessageReply], replyTo)
+      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
+    }
 }

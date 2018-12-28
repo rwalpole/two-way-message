@@ -32,3 +32,19 @@ object TwoWayMessageFormat {
 case class TwoWayMessage(recipient: Recipient, subject: String, content: Option[String] = None, replyTo: Option[String] = None)
 case class TwoWayMessageReply(content: String)
 
+object FormId extends Enumeration {
+
+  type FormId = Value
+
+  val Question = Value("2WSM-question")
+  val Reply = Value("2WSM-reply")
+}
+
+object MessageType extends Enumeration {
+
+  type MessageType = Value
+
+  val Advisor = Value("2wsm-advisor")
+  val Customer = Value("2wsm-customer")
+}
+

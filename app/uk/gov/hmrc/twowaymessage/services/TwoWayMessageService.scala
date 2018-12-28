@@ -29,6 +29,8 @@ import uk.gov.hmrc.http._
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model.CommonFormats._
 import uk.gov.hmrc.twowaymessage.model.Error
+import uk.gov.hmrc.twowaymessage.model.FormId.FormId
+import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 import uk.gov.hmrc.twowaymessage.model._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,7 +41,7 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
   implicit val hc = HeaderCarrier()
 
   def post(twoWayMessage: TwoWayMessage): Future[Result] = {
-    val body = createJsonForMessage(randomUUID.toString, twoWayMessage)
+    val body = createJsonForMessage(randomUUID.toString, MessageType.Customer, FormId.Question, twoWayMessage)
     messageConnector.postMessage(body) map {
       handleResponse
     } recover {
@@ -49,10 +51,24 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     }
   }
 
-  def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
+  def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
     (for {
       metadata <- messageConnector.getMessageMetadata(replyTo)
-      body = createJsonForReply(randomUUID.toString, metadata, twoWayMessageReply, replyTo)
+      body = createJsonForReply(randomUUID.toString, MessageType.Advisor, FormId.Reply, metadata, twoWayMessageReply, replyTo)
+      resp <- messageConnector.postMessage(body)
+    } yield resp) map {
+      handleResponse
+    } recover {
+      case e: Upstream4xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
+      case e: Upstream5xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
+      case e: HttpException => BadGateway(Json.obj("error" -> e.responseCode, "message" -> e.message))
+    }
+  }
+
+  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
+    (for {
+      metadata <- messageConnector.getMessageMetadata(replyTo)
+      body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata, twoWayMessageReply, replyTo)
       resp <- messageConnector.postMessage(body)
     } yield resp) map {
       handleResponse
@@ -68,27 +84,35 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     case _ => BadGateway(Json.toJson(Error(response.status, response.body)))
   }
 
-  def createJsonForMessage(id: String, twoWayMessage: TwoWayMessage): Message =
+  def createJsonForMessage(id: String,
+                           messageType: MessageType,
+                           formId: FormId,
+                           twoWayMessage: TwoWayMessage): Message =
     Message(
       ExternalRef(id, "2WSM"),
       twoWayMessage.recipient,
-      "2wsm-customer",
+      messageType,
       twoWayMessage.subject,
       twoWayMessage.content.getOrElse(""),
-      Details("2WSM-question", None)
+      Details(formId, None)
     )
 
-  def createJsonForReply(id: String, metadata: MessageMetadata, reply: TwoWayMessageReply, replyTo: String): Message = {
+  def createJsonForReply(id: String,
+                         messageType: MessageType,
+                         formId: FormId,
+                         metadata: MessageMetadata,
+                         reply: TwoWayMessageReply,
+                         replyTo: String): Message = {
     Message(
       ExternalRef(id, "2WSM"),
       Recipient(
         TaxIdentifier(metadata.recipient.identifier.name, metadata.recipient.identifier.value),
         metadata.recipient.email.getOrElse("")
       ),
-      "2wsm-advisor",
+      messageType,
       s"RE: ${metadata.subject}",
       reply.content,
-      Details("2WSM-reply", Some(replyTo))
+      Details(formId, Some(replyTo))
     )
   }
 }
