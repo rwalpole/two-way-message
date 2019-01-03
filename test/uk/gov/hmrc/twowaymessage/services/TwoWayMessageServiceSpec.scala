@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.twowaymessage.services
 
-
 import com.codahale.metrics.SharedMetricRegistries
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.http.HttpEntity.Strict
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -132,17 +132,39 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       messageResult.header.status shouldBe 201
     }
 
-    "return 502 (Bad Gateway) when posting a message to the message service fails" in {
+    "return 502 (Bad Gateway) when posting a message to the message service fails with a 409 Conflict" in {
 
       when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(messageMetadata))
 
+      val postMessageResponse = HttpResponse(Http.Status.CONFLICT,
+        responseString = Some("POST of 'http://localhost:8910/messages' returned 409. Response body: '{\"reason\":\"Duplicated message content or external reference ID\"}'"))
+
       when(mockMessageConnector.postMessage(any[Message])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(HttpResponse(Http.Status.BAD_REQUEST)))
+        .thenReturn(Future.successful(postMessageResponse))
 
       val messageResult = await(messageService.postAdvisorReply(
         TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
       messageResult.header.status shouldBe 502
+      messageResult.body.asInstanceOf[Strict].data.utf8String shouldBe
+        "{\"error\":409,\"message\":\"POST of 'http://localhost:8910/messages' returned 409. Response body: '{\\\"reason\\\":\\\"Duplicated message content or external reference ID\\\"}'\"}"
+    }
+
+    "return 502 (Bad Gateway) when posting a message to the message service and getMessageMetadata fails with a 400 Bad Request (Invalid ID format)" in {
+
+      when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
+        .thenReturn(
+          Future.failed(
+            new uk.gov.hmrc.http.BadRequestException(
+              "GET of 'http://localhost:8910/messages/5c2dec526900006b000d53b/metadata' returned 400 (Bad Request). Response body '{ \"status\": 400, \"message\": \"A client error occurred: ID 5c2dec526900006b000d53b was invalid\" } '")
+          )
+        )
+
+      val messageResult = await(messageService.postCustomerReply(
+        TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
+      messageResult.header.status shouldBe 502
+      messageResult.body.asInstanceOf[Strict].data.utf8String shouldBe
+        "{\"error\":400,\"message\":\"GET of 'http://localhost:8910/messages/5c2dec526900006b000d53b/metadata' returned 400 (Bad Request). Response body '{ \\\"status\\\": 400, \\\"message\\\": \\\"A client error occurred: ID 5c2dec526900006b000d53b was invalid\\\" } '\"}"
     }
 
     SharedMetricRegistries.clear
@@ -175,17 +197,39 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       messageResult.header.status shouldBe 201
     }
 
-    "return 502 (Bad Gateway) when posting a message to the message service fails" in {
+    "return 502 (Bad Gateway) when posting a message to the message service fails with a 409 Conflict" in {
 
       when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(messageMetadata))
 
+      val postMessageResponse = HttpResponse(Http.Status.CONFLICT,
+        responseString = Some("POST of 'http://localhost:8910/messages' returned 409. Response body: '{\"reason\":\"Duplicated message content or external reference ID\"}'"))
+
       when(mockMessageConnector.postMessage(any[Message])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(HttpResponse(Http.Status.BAD_REQUEST)))
+        .thenReturn(Future.successful(postMessageResponse))
 
       val messageResult = await(messageService.postCustomerReply(
         TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
       messageResult.header.status shouldBe 502
+      messageResult.body.asInstanceOf[Strict].data.utf8String shouldBe
+        "{\"error\":409,\"message\":\"POST of 'http://localhost:8910/messages' returned 409. Response body: '{\\\"reason\\\":\\\"Duplicated message content or external reference ID\\\"}'\"}"
+    }
+
+    "return 502 (Bad Gateway) when posting a message to the message service and getMessageMetadata fails with a 404 Not Found (Unable to find ID)" in {
+
+      when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
+        .thenReturn(
+          Future.failed(
+            new uk.gov.hmrc.http.NotFoundException(
+              "GET of 'http://localhost:8910/messages/5c2dec526900006b000d53b1/metadata' returned 404 (Not Found). Response body: ''")
+          )
+        )
+
+      val messageResult = await(messageService.postCustomerReply(
+        TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
+      messageResult.header.status shouldBe 502
+      messageResult.body.asInstanceOf[Strict].data.utf8String shouldBe
+        "{\"error\":404,\"message\":\"GET of 'http://localhost:8910/messages/5c2dec526900006b000d53b1/metadata' returned 404 (Not Found). Response body: ''\"}"
     }
 
     SharedMetricRegistries.clear

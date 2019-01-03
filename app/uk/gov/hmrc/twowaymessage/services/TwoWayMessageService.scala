@@ -33,7 +33,7 @@ import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 import uk.gov.hmrc.twowaymessage.model._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implicit ec: ExecutionContext) {
@@ -44,44 +44,42 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     val body = createJsonForMessage(randomUUID.toString, MessageType.Customer, FormId.Question, twoWayMessage)
     messageConnector.postMessage(body) map {
       handleResponse
-    } recover {
-      case e: Upstream4xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
-      case e: Upstream5xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
-      case e: HttpException => BadGateway(Json.obj("error" -> e.responseCode, "message" -> e.message))
-    }
+    } recover handleError
   }
 
   def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
     (for {
-      metadata <- messageConnector.getMessageMetadata(replyTo)
-      body = createJsonForReply(randomUUID.toString, MessageType.Advisor, FormId.Reply, metadata, twoWayMessageReply, replyTo)
-      resp <- messageConnector.postMessage(body)
+    metadata <- messageConnector.getMessageMetadata(replyTo)
+    body = createJsonForReply(randomUUID.toString, MessageType.Advisor, FormId.Reply, metadata, twoWayMessageReply, replyTo)
+    resp <- messageConnector.postMessage(body)
     } yield resp) map {
       handleResponse
-    } recover {
-      case e: Upstream4xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
-      case e: Upstream5xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
-      case e: HttpException => BadGateway(Json.obj("error" -> e.responseCode, "message" -> e.message))
-    }
+    } recover handleError
   }
 
   def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
     (for {
-      metadata <- messageConnector.getMessageMetadata(replyTo)
-      body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata, twoWayMessageReply, replyTo)
-      resp <- messageConnector.postMessage(body)
+    metadata <- messageConnector.getMessageMetadata(replyTo)
+    body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata, twoWayMessageReply, replyTo)
+    resp <- messageConnector.postMessage(body)
     } yield resp) map {
       handleResponse
-    } recover {
-      case e: Upstream4xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
-      case e: Upstream5xxResponse => BadGateway(Json.obj("error" -> e.upstreamResponseCode, "message" -> e.message))
-      case e: HttpException => BadGateway(Json.obj("error" -> e.responseCode, "message" -> e.message))
-    }
+    } recover handleError
   }
+
+  val errorResponse = (status: Int, message: String) =>
+    BadGateway(Json.toJson(Error(status, message)))
 
   def handleResponse(response: HttpResponse): Result = response.status match {
     case CREATED => Created(Json.parse(response.body))
-    case _ => BadGateway(Json.toJson(Error(response.status, response.body)))
+    case _ => errorResponse(response.status, response.body)
+  }
+
+  def handleError(): PartialFunction[Throwable, Result] = {
+    case e: Upstream4xxResponse => errorResponse(e.upstreamResponseCode, e.message)
+    case e: Upstream5xxResponse => errorResponse(e.upstreamResponseCode, e.message)
+    case e: HttpException => errorResponse(e.responseCode, e.message)
+//    case _ => errorResponse(123, "error message!")
   }
 
   def createJsonForMessage(id: String,
