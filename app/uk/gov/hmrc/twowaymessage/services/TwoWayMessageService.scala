@@ -79,7 +79,6 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     case e: Upstream4xxResponse => errorResponse(e.upstreamResponseCode, e.message)
     case e: Upstream5xxResponse => errorResponse(e.upstreamResponseCode, e.message)
     case e: HttpException => errorResponse(e.responseCode, e.message)
-//    case _ => errorResponse(123, "error message!")
   }
 
   def createJsonForMessage(id: String,
