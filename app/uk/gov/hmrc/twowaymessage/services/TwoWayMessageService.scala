@@ -47,24 +47,25 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     } recover handleError
   }
 
-  def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
+  def postReply(twoWayMessageReply: TwoWayMessageReply,
+                replyTo: String,
+                messageType: MessageType,
+                formId: FormId): Future[Result] = {
     (for {
-    metadata <- messageConnector.getMessageMetadata(replyTo)
-    body = createJsonForReply(randomUUID.toString, MessageType.Advisor, FormId.Reply, metadata, twoWayMessageReply, replyTo)
-    resp <- messageConnector.postMessage(body)
+      metadata <- messageConnector.getMessageMetadata(replyTo)
+      body = createJsonForReply(randomUUID.toString, messageType, formId, metadata, twoWayMessageReply, replyTo)
+      resp <- messageConnector.postMessage(body)
     } yield resp) map {
       handleResponse
     } recover handleError
   }
 
+  def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
+    postReply(twoWayMessageReply, replyTo, MessageType.Advisor, FormId.Reply)
+  }
+
   def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
-    (for {
-    metadata <- messageConnector.getMessageMetadata(replyTo)
-    body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata, twoWayMessageReply, replyTo)
-    resp <- messageConnector.postMessage(body)
-    } yield resp) map {
-      handleResponse
-    } recover handleError
+    postReply(twoWayMessageReply, replyTo, MessageType.Customer, FormId.Question)
   }
 
   val errorResponse = (status: Int, message: String) =>
