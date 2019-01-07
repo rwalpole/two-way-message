@@ -28,6 +28,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.mvc.Http
+import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -35,7 +36,6 @@ import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.parsing.json.JSONObject
 
 class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
@@ -56,27 +56,16 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
 
   "TwoWayMessageService.post" should {
 
+    val nino = Nino("AB123456C")
     val twoWayMessageExample = TwoWayMessage(
-      Recipient(
-        TaxIdentifier(
-          "HMRC_ID",
-          "AB123456C"
-        ),
-        "someEmail@test.com"
-      ),
+      "someEmail@test.com",
       "Question",
       Some("SGVsbG8gV29ybGQ="),
       Option.empty
     )
 
     val twoWayMessageReplyExample = TwoWayMessage(
-      Recipient(
-        TaxIdentifier(
-          "HMRC_ID",
-          "AB123456C"
-        ),
-        "someEmail@test.com"
-      ),
+      "someEmail@test.com",
       "Question",
       Some("SGVsbG8gV29ybGQ="),
       Option.apply("replyId")
@@ -91,14 +80,14 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           )
         )
 
-      val messageResult = await(messageService.post(twoWayMessageExample))
+      val messageResult = await(messageService.post(nino, twoWayMessageExample))
       messageResult.header.status shouldBe 201
     }
 
     "return 502 (Bad Gateway) when posting a message to the message service fails" in {
       when(mockMessageConnector.postMessage(any[Message])(any[HeaderCarrier]))
         .thenReturn(Future.successful(HttpResponse(Http.Status.BAD_REQUEST)))
-      val messageResult = await(messageService.post(twoWayMessageExample))
+      val messageResult = await(messageService.post(nino, twoWayMessageExample))
       messageResult.header.status shouldBe 502
     }
 
@@ -249,14 +238,12 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         )
 
       val originalMessage = TwoWayMessage(
-        Recipient(
-          TaxIdentifier("nino", "AB123456C"),
-          "email@test.com"
-        ),
+          "email@test.com",
         "QUESTION",
         Some("some base64-encoded-html"))
 
-      val actual = messageService.createJsonForMessage("123412342314",  MessageType.Customer, FormId.Question, originalMessage)
+      val nino = Nino("AB123456C")
+      val actual = messageService.createJsonForMessage("123412342314",  MessageType.Customer, FormId.Question, originalMessage, nino)
       assert(actual.equals(expected))
     }
 
