@@ -26,7 +26,7 @@ import play.api.mvc.Results._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
-import uk.gov.hmrc.twowaymessage.model.CommonFormats._
+import uk.gov.hmrc.twowaymessage.model.Error._
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 import uk.gov.hmrc.twowaymessage.model.{Error, _}
@@ -83,13 +83,13 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
                            messageType: MessageType,
                            formId: FormId,
                            twoWayMessage: TwoWayMessage, nino: Nino): Message = {
-    val recipient = Recipient(TaxIdentifier(nino.name, nino.value), twoWayMessage.email)
+    val recipient = Recipient(TaxIdentifier(nino.name, nino.value), twoWayMessage.contactDetails.email)
     Message(
       ExternalRef(id, "2WSM"),
       recipient,
       messageType,
       twoWayMessage.subject,
-      twoWayMessage.content.getOrElse(""),
+      twoWayMessage.content,
       Details(formId, None)
     )
   }

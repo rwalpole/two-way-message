@@ -54,7 +54,9 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
   val twoWayMessageGood = Json.parse(
     """
       |    {
-      |      "email":"someEmail@test.com",
+      |      "contactDetails": {
+      |         "email":"someEmail@test.com"
+      |      },
       |      "subject":"QUESTION",
       |      "content":"SGVsbG8gV29ybGQ="
       |    }""".stripMargin)

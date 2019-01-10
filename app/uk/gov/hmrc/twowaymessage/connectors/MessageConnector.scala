@@ -23,7 +23,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.model.{Message, MessageMetadata}
-import uk.gov.hmrc.twowaymessage.model.CommonFormats._
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,14 +32,11 @@ class MessageConnector @Inject()(httpClient: HttpClient, servicesConfig: Service
   private val logger = Logger(this.getClass)
   val messageBaseUrl: String = servicesConfig.baseUrl("message")
 
-  import uk.gov.hmrc.twowaymessage.model.MessageFormat._
-
   def postMessage(body: Message)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     httpClient.POST(s"$messageBaseUrl/messages", body)
   }
 
   def getMessageMetadata(replyTo: String)(implicit hc: HeaderCarrier): Future[MessageMetadata] = {
-    import MessageMetadata._
     httpClient.GET[MessageMetadata](s"$messageBaseUrl/messages/${replyTo}/metadata")
   }
 }

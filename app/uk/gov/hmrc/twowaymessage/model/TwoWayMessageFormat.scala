@@ -20,16 +20,15 @@ import play.api.libs.json.{Json, Reads, Writes}
 
 object TwoWayMessageFormat {
 
-  import uk.gov.hmrc.twowaymessage.model.CommonFormats._
+  implicit val contactDetailsReads: Reads[ContactDetails] = Json.reads[ContactDetails]
 
-  implicit val twoWayMessage: Reads[TwoWayMessage] = Json.reads[TwoWayMessage]
-  implicit val twoWayMessageWrites: Writes[TwoWayMessage] = Json.writes[TwoWayMessage]
+  implicit val twoWayMessageReads: Reads[TwoWayMessage] = Json.reads[TwoWayMessage]
 
-  implicit val twoWayMessageReply: Reads[TwoWayMessageReply] = Json.reads[TwoWayMessageReply]
-  implicit val twoWayMessagReplyeWrites: Writes[TwoWayMessageReply] = Json.writes[TwoWayMessageReply]
+  implicit val twoWayMessageReplyReads: Reads[TwoWayMessageReply] = Json.reads[TwoWayMessageReply]
 }
 
-case class TwoWayMessage(email: String, subject: String, content: Option[String] = None, replyTo: Option[String] = None)
+case class ContactDetails(email: String)
+case class TwoWayMessage(contactDetails: ContactDetails, subject: String, content: String, replyTo: Option[String] = None)
 case class TwoWayMessageReply(content: String)
 
 object FormId extends Enumeration {
@@ -47,4 +46,5 @@ object MessageType extends Enumeration {
   val Advisor = Value("2wsm-advisor")
   val Customer = Value("2wsm-customer")
 }
+
 

@@ -10,12 +10,8 @@
 Example JSON body in POST request:
 ```
 { 
-    "recipient":{
-        "taxIdentifier":{
-            "name":"HMRC_ID",
-            "value":"AB123456C"
-        },
-        "email":"someEmail@test.com"
+    "contactDetails":{
+        "email": "someEmail@test.com"
     },
     "subject":"QUESTION",
     "content":"Some base64-encoded HTML",

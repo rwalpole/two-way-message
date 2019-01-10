@@ -58,16 +58,16 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
 
     val nino = Nino("AB123456C")
     val twoWayMessageExample = TwoWayMessage(
-      "someEmail@test.com",
+      ContactDetails("someEmail@test.com"),
       "Question",
-      Some("SGVsbG8gV29ybGQ="),
+      "SGVsbG8gV29ybGQ=",
       Option.empty
     )
 
     val twoWayMessageReplyExample = TwoWayMessage(
-      "someEmail@test.com",
+      ContactDetails("someEmail@test.com"),
       "Question",
-      Some("SGVsbG8gV29ybGQ="),
+      "SGVsbG8gV29ybGQ=",
       Option.apply("replyId")
     )
 
@@ -237,10 +237,11 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           Details(FormId.Question)
         )
 
-      val originalMessage = TwoWayMessage(
-          "email@test.com",
-        "QUESTION",
-        Some("some base64-encoded-html"))
+        val originalMessage = TwoWayMessage(
+          ContactDetails("email@test.com"),
+          "QUESTION",
+          "some base64-encoded-html"
+      )
 
       val nino = Nino("AB123456C")
       val actual = messageService.createJsonForMessage("123412342314",  MessageType.Customer, FormId.Question, originalMessage, nino)

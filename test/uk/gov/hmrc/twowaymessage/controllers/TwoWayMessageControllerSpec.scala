@@ -49,7 +49,9 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
   val twoWayMessageGood = Json.parse(
     """
       |    {
-      |      "email":"someEmail@test.com",
+      |      "contactDetails": {
+      |         "email":"someEmail@test.com"
+      |      },
       |      "subject":"QUESTION",
       |      "content":"SGVsbG8gV29ybGQ="
       |    }""".stripMargin)

@@ -22,7 +22,9 @@ import FormId._
 
 object MessageFormat {
 
-  import uk.gov.hmrc.twowaymessage.model.CommonFormats._
+  implicit val taxIdentifierWrites: Writes[TaxIdentifier] = Json.writes[TaxIdentifier]
+
+  implicit val recipientWrites: Writes[Recipient] = Json.writes[Recipient]
 
   implicit val detailsWrites: OWrites[Details] =  Json.writes[Details]
 
@@ -36,6 +38,10 @@ object MessageFormat {
 
   implicit val messageMetadataReads: Reads[MessageMetadata] = Json.reads[MessageMetadata]
 }
+
+case class Recipient(taxIdentifier: TaxIdentifier, email: String)
+
+case class TaxIdentifier(name: String, value: String)
 
 case class Message(externalRef: ExternalRef, recipient: Recipient, messageType: MessageType, subject: String, content: String, details: Details)
 
