@@ -1,100 +1,147 @@
 package uk.gov.hmrc.twowaymessage
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import org.scalatest.Ignore
+import akka.actor.ActorSystem
+import com.google.common.io.BaseEncoding
 import org.scalatest.{Matchers, WordSpec}
-import play.api.libs.json.{JsObject, Json}
-import play.api.libs.ws.WSClient
-import uk.gov.hmrc.domain.Nino
+import play.api.libs.json.{JsObject, Json, Reads}
+import play.api.libs.ws.ahc.{AhcWSClient, AhcWSClientConfig, StandaloneAhcWSClient}
 import uk.gov.hmrc.integration.ServiceSpec
-import uk.gov.hmrc.test.it.CanCreateAuthority
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-@Ignore
-class IntegrationTest extends WordSpec with Matchers with  CanCreateAuthority with ServiceSpec  {
+class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 
   def externalServices: Seq[String] = Seq("datastream", "auth", "message", "user-details", "auth-login-api")
 
   implicit val defaultTimeout: FiniteDuration = Duration(15, TimeUnit.SECONDS)
 
-  override def authResource(r: String) = externalResource("auth-login-api", r)
+  implicit val system = ActorSystem()
+  implicit val materializer = akka.stream.ActorMaterializer()
+  def httpClient = new AhcWSClient(StandaloneAhcWSClient(AhcWSClientConfig()))
 
-  override def httpClient = app.injector.instanceOf[WSClient]
   override def additionalConfig: Map[String, _] = Map("auditing.consumer.baseUri.port" -> externalServicePorts("datastream"))
 
-  val nino = Nino("CE100000D")
-
-  val authHeader =
-    governmentGatewayAuthority()
-      .withNino(nino)
-      .bearerTokenHeader()
-
-  "Creating a message" should {
+  "User creating a message" should {
     "be successful given valid json" in {
-      val content = UUID.randomUUID().toString
+      val message = MessageUtil.buildValidCustomerMessage()
 
-      val jsonString =
-        s"""
-           | {
-           |   "contactDetails":{
-           |      "email": "someEmail@test.com"
-           |   },
-           |   "subject": "subject",
-           |   "content": "$content",
-           |   "replyTo": "replyTo"
-           | }
-    """.stripMargin
-
-      val message = Json.parse(jsonString).as[JsObject]
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit")).withHeaders(authHeader).post(message).futureValue
+      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
+        .withHeaders(AuthUtil.buildUserToken())
+        .post(message)
+        .futureValue
 
       response.status shouldBe 201
     }
 
-    "fail given invalid json" in {
-      val content = UUID.randomUUID().toString
-      val jsonString =
-        s"""
-         | {
-         |   "email": "test@test.com",
-         |   "content": "$content",
-         |   "replyTo": "replyTo"
-         | }
-    """.stripMargin
+   "fail given invalid json" in {
+     val message = MessageUtil.buildInvalidCustomerMessage
 
-      val message = Json.parse(jsonString).as[JsObject]
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit")).withHeaders(authHeader).post(message).futureValue
+     val response = httpClient
+       .url(resource("/two-way-message/message/customer/0/submit"))
+       .withHeaders(AuthUtil.buildUserToken())
+       .post(message)
+       .futureValue
 
-      response.status shouldBe 400
-    }
-  }
+     response.status shouldBe 400
+   }
+ }
+
+ "Advisor responding" should {
+   "Forbidden when no access token" in {
+     val message = MessageUtil.buildValidAdviserResponse()
+     val validMessageId = MessageUtil.getValidMessageId()
+
+     val response = httpClient
+       .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+       .post(message)
+       .futureValue
+
+     response.status shouldBe 403
+   }
+
+   "Forbidden when using user access token" in {
+     val message = MessageUtil.buildValidAdviserResponse()
+     val validMessageId = MessageUtil.getValidMessageId()
+
+     val response = httpClient.url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+       .withHttpHeaders(AuthUtil.buildUserToken())
+       .post(message)
+       .futureValue
+
+     response.status shouldBe 403
+   }
+
+ "Access when no access token" in {
+   val message = MessageUtil.buildValidAdviserResponse()
+   val validMessageId = MessageUtil.getValidMessageId()
+
+   val response = httpClient.url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+     .withHeaders(AuthUtil.buildStrideToken())
+     .post(message)
+     .futureValue
+
+    response.status shouldBe 201
+ }
 }
 
-@Ignore
-class IntegrationTestWithoutMessage extends WordSpec with Matchers with  CanCreateAuthority with ServiceSpec  {
+  object AuthUtil {
+    lazy val authPort = externalServicePorts.get("auth").get
+    lazy val ggAuthPort =  externalServicePorts.get("auth-login-api").get
 
-  def externalServices: Seq[String] = Seq("datastream", "auth", "user-details", "auth-login-api")
+    implicit val deserialiser: Reads[GatewayToken] = Json.reads[GatewayToken]
 
-  implicit val defaultTimeout: FiniteDuration = Duration(15, TimeUnit.SECONDS)
-  override def authResource(r: String) = externalResource("auth-login-api", r)
+    case class GatewayToken(val gatewayToken: String)
 
-  override def httpClient = app.injector.instanceOf[WSClient]
+    private val STRIDE_USER_PAYLOAD =
+      """
+        | {
+        |  "clientId" : "id",
+        |  "enrolments" : [],
+        |  "ttl": 1200
+        | }
+      """.stripMargin
 
-  val nino = Nino("CE100000D")
+    private val GG_USER_PAYLOAD =
+      """
+        | {
+        |  "credId": "1234",
+        |  "affinityGroup": "Organisation",
+        |  "confidenceLevel": 100,
+        |  "credentialStrength": "none",
+        |  "nino": "AA000108C",
+        |  "enrolments": []
+        |  }
+     """.stripMargin
 
-  val authHeader =
-    governmentGatewayAuthority()
-      .withNino(nino)
-      .bearerTokenHeader()
+    def buildUserToken(): (String, String) = {
+      val response = httpClient.url(s"http://localhost:$ggAuthPort/government-gateway/session/login")
+        .withHttpHeaders(("Content-Type", "application/json"))
+        .post(GG_USER_PAYLOAD).futureValue
 
-  override def additionalConfig: Map[String, _] = Map("auditing.consumer.baseUri.port" -> externalServicePorts("datastream"))
+      ("Authorization", response.header("Authorization").get)
+    }
 
-  "Creating a message if message microservice is unavailable" should {
-    "fail even with a valid json" in {
-      val content = UUID.randomUUID().toString
+    def buildStrideToken(): (String, String) = {
+      val response = httpClient.url(s"http://localhost:$authPort/auth/sessions")
+        .withHttpHeaders(("Content-Type", "application/json"))
+        .post(STRIDE_USER_PAYLOAD).futureValue
+
+      ("Authorization", response.header("Authorization").get)
+    }
+
+  }
+
+  object MessageUtil {
+    import play.api.libs.json.{Json, Reads}
+
+    implicit val deserialiser: Reads[MessageId] = Json.reads[MessageId]
+    def generateContent() = BaseEncoding.base64().encode(s"Hello world! - ${System.currentTimeMillis()}".getBytes())
+
+    case class MessageId(val id: String)
+
+    def buildValidCustomerMessage(): JsObject = {
       val jsonString =
         s"""
            | {
@@ -102,15 +149,42 @@ class IntegrationTestWithoutMessage extends WordSpec with Matchers with  CanCrea
            |      "email": "someEmail@test.com"
            |   },
            |   "subject": "subject",
-           |   "content": "$content",
+           |   "content": "$generateContent",
+           |   "replyTo": "replyTo"
+           | }
+      """.stripMargin
+
+      Json.parse(jsonString).as[JsObject]
+    }
+
+    def buildInvalidCustomerMessage: JsObject = {
+      val jsonString =
+        s"""
+           | {
+           |   "email": "test@test.com",
+           |   "content": "$generateContent",
            |   "replyTo": "replyTo"
            | }
     """.stripMargin
 
-      val message = Json.parse(jsonString).as[JsObject]
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit")).withHeaders(authHeader).post(message).futureValue
+      Json.parse(jsonString).as[JsObject]
+    }
 
-      response.status shouldBe 502
+    def buildValidAdviserResponse(): JsObject = {
+      val jsonString =
+        s"""
+           | {
+           |   "content": "$generateContent"
+           | }
+      """.stripMargin
+      Json.parse(jsonString).as[JsObject]
+    }
+
+    def getValidMessageId(): String = {
+      val message = buildValidCustomerMessage()
+      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit")).withHeaders(AuthUtil.buildUserToken()).post(message).futureValue
+      Json.parse(response.body).as[MessageId].id
     }
   }
 }
+

@@ -17,11 +17,13 @@
 package uk.gov.hmrc.twowaymessage.controllers
 
 import javax.inject.{Inject, Singleton}
+
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.auth.core.retrieve.Retrievals
-import uk.gov.hmrc.auth.core.{AuthConnector, AuthorisedFunctions, NoActiveSession}
+import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
+import uk.gov.hmrc.auth.core.retrieve.{Retrievals, ~}
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
@@ -68,7 +70,15 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService,val authConne
 
   // Advisor replying to a customer message
   def createAdvisorResponse(replyTo: String): Action[JsValue] = Action.async(parse.json) {
-    implicit request => validateAndPostAdvisorResponse(request.body, replyTo)
+     implicit request => {
+       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+       authorised(AuthProviders(PrivilegedApplication))
+         .retrieve(Retrievals.allEnrolments and Retrievals.authorisedEnrolments and Retrievals.userDetailsUri) {
+           case allEnrolments ~ authorisedEnrolments ~ userDetailsUri => validateAndPostAdvisorResponse(request.body, replyTo)
+         }.recoverWith {
+         case _ => Future.successful(Forbidden)
+       }
+     }
   }
 
   // Validates the advisor response payload and then posts the reply
