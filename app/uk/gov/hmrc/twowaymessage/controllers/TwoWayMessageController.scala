@@ -82,7 +82,7 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService,val authConne
   }
 
   // Validates the advisor response payload and then posts the reply
-  def validateAndPostAdvisorResponse(requestBody: JsValue, replyTo: String): Future[Result] =
+  def validateAndPostAdvisorResponse(requestBody: JsValue, replyTo: String)(implicit hc: HeaderCarrier): Future[Result] =
     requestBody.validate[TwoWayMessageReply] match {
       case _: JsSuccess[_] => twms.postAdvisorReply(requestBody.as[TwoWayMessageReply], replyTo)
       case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))

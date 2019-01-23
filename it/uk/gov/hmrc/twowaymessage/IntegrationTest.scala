@@ -73,7 +73,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
      response.status shouldBe 403
    }
 
- "Access when no access token" in {
+ "Access when access token" in {
    val message = MessageUtil.buildValidAdviserResponse()
    val validMessageId = MessageUtil.getValidMessageId()
 
