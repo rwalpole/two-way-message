@@ -31,6 +31,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.test.Helpers._
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.twowaymessage.model.{TwoWayMessage, TwoWayMessageReply}
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
@@ -45,6 +46,7 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
     .injector()
 
   val controller = injector.instanceOf[TwoWayMessageController]
+  implicit val hc: HeaderCarrier = mock[HeaderCarrier]
 
   val twoWayMessageGood = Json.parse(
     """
@@ -79,7 +81,7 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
     }
 
     "return 201 (Created) when an advisor reply is successfully created in the message service " in {
-      when(mockMessageService.postAdvisorReply(any[TwoWayMessageReply], any[String]))
+      when(mockMessageService.postAdvisorReply(any[TwoWayMessageReply], any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(controller.validateAndPostAdvisorResponse(twoWayMessageReplyGood, "replyToId"))
       result.header.status shouldBe Status.CREATED
