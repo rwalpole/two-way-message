@@ -13,7 +13,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 
-  def externalServices: Seq[String] = Seq("datastream", "auth", "message", "user-details", "auth-login-api")
+  def externalServices: Seq[String] = Seq("datastream", "message", "auth-login-api")
 
   implicit val defaultTimeout: FiniteDuration = Duration(15, TimeUnit.SECONDS)
 
@@ -87,7 +87,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 }
 
   object AuthUtil {
-    lazy val authPort = externalServicePorts.get("auth").get
+    lazy val authPort = 8500
     lazy val ggAuthPort =  externalServicePorts.get("auth-login-api").get
 
     implicit val deserialiser: Reads[GatewayToken] = Json.reads[GatewayToken]

@@ -155,5 +155,12 @@ Or attempting to reply to a non-existing message:
 }
 ```
 
+## Note on Integration Tests
+
+For integration tests to run successfully you need the following apps run by sm externally:
+ - AUTH
+ - IDENTITY_VERIFICATION
+ - USER_DETAILS
+
 ### License
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
