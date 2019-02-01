@@ -107,7 +107,7 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
         metadata.recipient.email.getOrElse("")
       ),
       messageType,
-      s"RE: ${metadata.subject}",
+      metadata.subject,
       reply.content,
       Details(formId, Some(replyTo))
     )

@@ -253,7 +253,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         ExternalRef("some-random-id", "2WSM"),
         Recipient(TaxIdentifier("nino", "AB123456C"), "email@test.com"),
         MessageType.Advisor,
-        "RE: QUESTION",
+        "QUESTION",
         "some base64-encoded-html",
         Details(FormId.Reply, Some("reply-to-id"))
        )
