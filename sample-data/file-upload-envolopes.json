@@ -1,0 +1,11 @@
+{
+    "callbackUrl": "string representing absolute url",
+    "metadata": { "any": "valid json object" },
+    "constraints": 	{
+          "maxItems": 5,
+          "maxSize": "25MB",
+          "maxSizePerItem": "10KB",
+          "contentTypes": ["application/pdf","image/jpeg","application/xml"],
+          "allowZeroLengthFiles": false
+        }   
+}

@@ -20,8 +20,17 @@ import sbt._
 object AppDependencies {
 
   val compile = Seq(
-    "uk.gov.hmrc" %% "bootstrap-play-26" % "0.32.0",
-    "uk.gov.hmrc" %% "http-verbs" % "8.9.0-play-26",
+
+    "org.typelevel" %% "cats-core" % "1.4.0",
+    "org.apache.pdfbox" % "pdfbox" % "2.0.12",
+
+    "com.codecommit" %% "parseback-core" % "0.3",
+    "com.codecommit" %% "parseback-cats" % "0.3",
+
+    "com.github.pureconfig" %% "pureconfig" % "0.9.2",
+
+    "org.julienrf" %% "play-json-derived-codecs" % "3.3",
+    "uk.gov.hmrc" %% "bootstrap-play-26" % "0.36.0",
     "uk.gov.hmrc" %% "play-health" % "3.8.0-play-26",
     "com.google.inject" % "guice" % "4.2.0",
     "com.kenshoo" %% "metrics-play" % "2.6.6_0.6.2",
@@ -39,7 +48,9 @@ object AppDependencies {
     "com.typesafe.play" %% "play-test" % current % "test",
     "org.mockito" % "mockito-core" % "2.23.4" % "test",
     "org.pegdown" % "pegdown" % "1.6.0" % "test,it",
-    "com.github.tomakehurst" % "wiremock-standalone" % "2.19.0" % "test,it",
+    "com.github.tomakehurst" % "wiremock-standalone" % "2.20.0" % "test,it",
+    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test,it",
+    "org.scalamock" %% "scalamock-scalatest-support" % "3.6.0" % "test,it",
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test,it"
   )
 

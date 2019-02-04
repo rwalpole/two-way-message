@@ -99,7 +99,7 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
           .willReturn(aResponse().withStatus(Status.CREATED)))
 
       val result = await(messageConnector.postMessage(messageExample)(new HeaderCarrier()))
-      result.status shouldBe(201)
+      result.status shouldBe (201)
     }
     SharedMetricRegistries.clear
   }
@@ -125,14 +125,15 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
 
       val replyTo = "replyToId"
       givenThat(
-        get(urlEqualTo(s"/messages/${replyTo}/metadata"))
-          .willReturn(aResponse()
-            .withStatus(Status.OK)
-            .withBody(jsonResponseBody)))
+        get(urlEqualTo(s"/messages/$replyTo/metadata"))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(jsonResponseBody)))
 
       val result = await(messageConnector.getMessageMetadata(replyTo)(new HeaderCarrier()))
       result.id shouldBe "5c18eb166f0000110204b160"
-      result.recipient.identifier shouldBe TaxIdWithName("HMRC-NI","AB123456C")
+      result.recipient.identifier shouldBe TaxIdWithName("HMRC-NI", "AB123456C")
       result.recipient.email shouldBe Some("someEmail@test.com")
       result.recipient.regime shouldBe "REGIME"
       result.subject shouldBe "SUBJECT"

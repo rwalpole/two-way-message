@@ -26,7 +26,7 @@ object MessageFormat {
 
   implicit val recipientWrites: Writes[Recipient] = Json.writes[Recipient]
 
-  implicit val detailsWrites: OWrites[Details] =  Json.writes[Details]
+  implicit val detailsWrites: OWrites[Details] = Json.writes[Details]
 
   implicit val externalRefWrites: OWrites[ExternalRef] = Json.writes[ExternalRef]
 
@@ -43,7 +43,13 @@ case class Recipient(taxIdentifier: TaxIdentifier, email: String)
 
 case class TaxIdentifier(name: String, value: String)
 
-case class Message(externalRef: ExternalRef, recipient: Recipient, messageType: MessageType, subject: String, content: String, details: Details)
+case class Message(
+  externalRef: ExternalRef,
+  recipient: Recipient,
+  messageType: MessageType,
+  subject: String,
+  content: String,
+  details: Details)
 
 case class ExternalRef(id: String, source: String)
 

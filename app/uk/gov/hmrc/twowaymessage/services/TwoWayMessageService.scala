@@ -29,9 +29,9 @@ import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model.Error._
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
-import uk.gov.hmrc.twowaymessage.model.{Error, _}
+import uk.gov.hmrc.twowaymessage.model.{ Error, _ }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implicit ec: ExecutionContext) {
 
@@ -44,10 +44,8 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     } recover handleError
   }
 
-  def postReply(twoWayMessageReply: TwoWayMessageReply,
-                replyTo: String,
-                messageType: MessageType,
-                formId: FormId)(implicit hc: HeaderCarrier): Future[Result] = {
+  def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String, messageType: MessageType, formId: FormId)(
+    implicit hc: HeaderCarrier): Future[Result] =
     (for {
       metadata <- messageConnector.getMessageMetadata(replyTo)
       body = createJsonForReply(randomUUID.toString, messageType, formId, metadata, twoWayMessageReply, replyTo)
@@ -55,34 +53,33 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     } yield resp) map {
       handleResponse
     } recover handleError
-  }
 
-  def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result] = {
+  def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(
+    implicit hc: HeaderCarrier): Future[Result] =
     postReply(twoWayMessageReply, replyTo, MessageType.Advisor, FormId.Reply)
-  }
 
-  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] = {
+  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] =
     postReply(twoWayMessageReply, replyTo, MessageType.Customer, FormId.Question)
-  }
 
-  val errorResponse = (status: Int, message: String) =>
-    BadGateway(Json.toJson(Error(status, message)))
+  val errorResponse = (status: Int, message: String) => BadGateway(Json.toJson(Error(status, message)))
 
   def handleResponse(response: HttpResponse): Result = response.status match {
     case CREATED => Created(Json.parse(response.body))
-    case _ => errorResponse(response.status, response.body)
+    case _       => errorResponse(response.status, response.body)
   }
 
   def handleError(): PartialFunction[Throwable, Result] = {
     case e: Upstream4xxResponse => errorResponse(e.upstreamResponseCode, e.message)
     case e: Upstream5xxResponse => errorResponse(e.upstreamResponseCode, e.message)
-    case e: HttpException => errorResponse(e.responseCode, e.message)
+    case e: HttpException       => errorResponse(e.responseCode, e.message)
   }
 
-  def createJsonForMessage(id: String,
-                           messageType: MessageType,
-                           formId: FormId,
-                           twoWayMessage: TwoWayMessage, nino: Nino): Message = {
+  def createJsonForMessage(
+    id: String,
+    messageType: MessageType,
+    formId: FormId,
+    twoWayMessage: TwoWayMessage,
+    nino: Nino): Message = {
     val recipient = Recipient(TaxIdentifier(nino.name, nino.value), twoWayMessage.contactDetails.email)
     Message(
       ExternalRef(id, "2WSM"),
@@ -94,12 +91,13 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     )
   }
 
-  def createJsonForReply(id: String,
-                         messageType: MessageType,
-                         formId: FormId,
-                         metadata: MessageMetadata,
-                         reply: TwoWayMessageReply,
-                         replyTo: String): Message = {
+  def createJsonForReply(
+    id: String,
+    messageType: MessageType,
+    formId: FormId,
+    metadata: MessageMetadata,
+    reply: TwoWayMessageReply,
+    replyTo: String): Message =
     Message(
       ExternalRef(id, "2WSM"),
       Recipient(
@@ -111,5 +109,4 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
       reply.content,
       Details(formId, Some(replyTo))
     )
-  }
 }

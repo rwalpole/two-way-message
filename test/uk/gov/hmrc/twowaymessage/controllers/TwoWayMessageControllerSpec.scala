@@ -32,7 +32,7 @@ import play.api.mvc.Results._
 import play.api.test.Helpers._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.twowaymessage.model.{TwoWayMessage, TwoWayMessageReply}
+import uk.gov.hmrc.twowaymessage.model.{ TwoWayMessage, TwoWayMessageReply }
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
 import scala.concurrent.Future
@@ -48,34 +48,32 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
   val controller = injector.instanceOf[TwoWayMessageController]
   implicit val hc: HeaderCarrier = mock[HeaderCarrier]
 
-  val twoWayMessageGood = Json.parse(
-    """
-      |    {
-      |      "contactDetails": {
-      |         "email":"someEmail@test.com"
-      |      },
-      |      "subject":"QUESTION",
-      |      "content":"SGVsbG8gV29ybGQ="
-      |    }""".stripMargin)
+  val twoWayMessageGood = Json.parse("""
+                                       |    {
+                                       |      "contactDetails": {
+                                       |         "email":"someEmail@test.com"
+                                       |      },
+                                       |      "subject":"QUESTION",
+                                       |      "content":"SGVsbG8gV29ybGQ="
+                                       |    }""".stripMargin)
 
-  val twoWayMessageBadContent = Json.parse(
-    """
-      |    {
-      |     "subject":"QUESTION"
-      |    }""".stripMargin)
+  val twoWayMessageBadContent = Json.parse("""
+                                             |    {
+                                             |     "subject":"QUESTION"
+                                             |    }""".stripMargin)
 
-  val twoWayMessageReplyGood = Json.parse(
-    """
-      |    {
-      |     "subject":"answer",
-      |     "content":"Some base64-encoded HTML"
-      |    }""".stripMargin)
+  val twoWayMessageReplyGood = Json.parse("""
+                                            |    {
+                                            |     "subject":"answer",
+                                            |     "content":"Some base64-encoded HTML"
+                                            |    }""".stripMargin)
 
   "TwoWayMessageController" should {
 
     "return 201 (Created) when a message is successfully created in the message service " in {
       val nino = Nino("AB123456C")
-      when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage])).thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
+      when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage]))
+        .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(controller.validateAndPostMessage(nino, twoWayMessageGood))
       result.header.status shouldBe Status.CREATED
     }

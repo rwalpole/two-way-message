@@ -1,0 +1,39 @@
+{
+  "_id": "ADDRESS",
+  "formName": "Adddres component",
+  "description": "Sample address configuration",
+  "dmsSubmission": {
+    "customerId": "${auth.payenino}",
+    "classificationType": "BT-NRU-Environmental",
+    "businessArea": "FinanceOpsCorpT",
+    "dmsFormId" : "ADDRESS"
+  },
+  "authConfig":{
+    "authModule": "legacyEEITTAuth",
+    "regimeId": "GF"
+  },
+  "submitSuccessUrl": "http://www.google.co.uk",
+  "submitErrorUrl": "http://www.yahoo.co.uk",
+  "sections": [
+    {
+      "title": "Address",
+      "fields": [
+        {
+          "type": "address",
+          "label": "Business address and phone number",
+          "id": "cbusiness-address"
+        }
+      ]
+    }
+  ],
+  "acknowledgementSection": {
+    "title": "Acknowledgment page",
+    "fields": [
+      {
+        "type": "info",
+        "id": "declarationTopInfo",
+        "label": "Acknowledgement copy",
+        "infoText": "thingy copy"
+      }
+    ]
+  }}

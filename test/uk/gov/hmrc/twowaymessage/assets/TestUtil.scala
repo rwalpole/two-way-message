@@ -32,15 +32,13 @@ import scala.concurrent.ExecutionContext
 
 class TestUtil extends UnitSpec with GuiceOneAppPerSuite with MockitoSugar with BeforeAndAfterEach {
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     super.beforeEach()
-  }
 
-  override def afterEach(): Unit = {
+  override def afterEach(): Unit =
     super.afterEach()
-  }
 
-  lazy val injector: Injector  = app.injector
+  lazy val injector: Injector = app.injector
   implicit lazy val system: ActorSystem = ActorSystem()
   implicit lazy val materializer: Materializer = app.materializer
   implicit lazy val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
