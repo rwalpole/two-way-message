@@ -47,14 +47,11 @@ class DmsModule(val environment: Environment, val configuration: Configuration) 
   def dmsClock: Clock = Clock.systemDefaultZone()
 
   @Provides
-  @Named("file-upload-base-url")
-  @Singleton
-  def fileUploadBaseUrl(servicesConfig: ServicesConfig): String =
-    servicesConfig.baseUrl("fileupload")
-
-  @Provides
   @Singleton
   def fuConfig(servicesConfig: ServicesConfig): FUConfig = {
+    val baseUrl = servicesConfig.baseUrl("file-upload")
+    val pathPrefix = servicesConfig.getConfString("file-upload.path-prefix", "")
+    val fileUploadBaseUrl = baseUrl + pathPrefix
     val formExpiryDays = configuration.get[Int]("formExpiryDays")
     formExpiryDays.verifyThat(_ > 0, s"'formExpiryDays' must be positive, was $formExpiryDays")
     val formMaxAttachments = configuration.get[Int]("formMaxAttachments")
@@ -72,7 +69,7 @@ class DmsModule(val environment: Environment, val configuration: Configuration) 
     contentTypes.length.verifyThat(_ > 0, s"'contentTypesSeparatedByPipe' is not set")
 
     FUConfig(
-      servicesConfig.baseUrl("file-upload"),
+      fileUploadBaseUrl,
       servicesConfig.baseUrl("file-upload-frontend"),
       formExpiryDays,
       s"${formMaxAttachmentTotalSizeMB}MB", //heuristic to compute max size
