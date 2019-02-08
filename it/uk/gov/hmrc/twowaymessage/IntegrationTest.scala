@@ -13,7 +13,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 
-  def externalServices: Seq[String] = Seq("datastream", "message", "auth-login-api")
+  def externalServices: Seq[String] = Seq("datastream", "auth-login-api")
 
   implicit val defaultTimeout: FiniteDuration = Duration(15, TimeUnit.SECONDS)
 
