@@ -44,21 +44,22 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService, val authConn
   // Customer creating a two-way message
   def createMessage(queueId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-    authorised().retrieve(Retrievals.nino) {
+    authorised(Enrolment("HMRC-NI")).retrieve(Retrievals.nino) {
       case Some(ninoId) => validateAndPostMessage(Nino(ninoId), request.body)
       case _ =>
         Logger.debug("Can not retrieve user's nino, returning Forbidden - Not Authorised Error")
         Future.successful(Forbidden(Json.toJson("Not authorised")))
+    } recover handleAuthorizationError
+  }
 
-    } recover {
-      case _: NoActiveSession =>
-        Logger.debug("Request did not have an Active Session, returning Unauthorised - Unauthenticated Error")
-        Unauthorized(Json.toJson("Not authenticated"))
+  def handleAuthorizationError(): PartialFunction[Throwable, Result] = {
+    case _: NoActiveSession =>
+      Logger.debug("Request did not have an Active Session, returning Unauthorised - Unauthenticated Error")
+      Unauthorized(Json.toJson("Not authenticated"))
 
-      case _ =>
-        Logger.debug("Request has an active session but was not authorised, returning Forbidden - Not Authorised Error")
-        Forbidden(Json.toJson("Not authorised"))
-    }
+    case _ =>
+      Logger.debug("Request has an active session but was not authorised, returning Forbidden - Not Authorised Error")
+      Forbidden(Json.toJson("Not authorised"))
   }
 
   // Validates the customer's message payload and then posts the message
@@ -72,14 +73,11 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService, val authConn
   def createAdvisorResponse(replyTo: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     {
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-      authorised(AuthProviders(PrivilegedApplication))
-        .retrieve(Retrievals.allEnrolments and Retrievals.authorisedEnrolments and Retrievals.userDetailsUri) {
-          case allEnrolments ~ authorisedEnrolments ~ userDetailsUri =>
-            validateAndPostAdvisorResponse(request.body, replyTo)
-        }
-        .recoverWith {
-          case _ => Future.successful(Forbidden)
-        }
+      authorised(AuthProviders(PrivilegedApplication)) {
+        validateAndPostAdvisorResponse(request.body, replyTo)
+      }.recoverWith {
+        case _ => Future.successful(Forbidden)
+      }
     }
   }
 
@@ -94,11 +92,15 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService, val authConn
   // Customer replying to an advisor's message
   def createCustomerResponse(queueId: String, replyTo: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-      validateAndPostCustomerResponse(request.body, replyTo)
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+      authorised(Enrolment("HMRC-NI")) {
+        validateAndPostCustomerResponse(request.body, replyTo)
+      } recover handleAuthorizationError
   }
 
   // Validates the customer's response payload and then posts the reply
-  def validateAndPostCustomerResponse(requestBody: JsValue, replyTo: String): Future[Result] =
+  def validateAndPostCustomerResponse(requestBody: JsValue, replyTo: String)(
+    implicit hc: HeaderCarrier): Future[Result] =
     requestBody.validate[TwoWayMessageReply] match {
       case _: JsSuccess[_] => twms.postCustomerReply(requestBody.as[TwoWayMessageReply], replyTo)
       case e: JsError      => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))

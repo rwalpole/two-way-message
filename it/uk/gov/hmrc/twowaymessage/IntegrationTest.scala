@@ -24,67 +24,122 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
   override def additionalConfig: Map[String, _] = Map("auditing.consumer.baseUri.port" -> externalServicePorts("datastream"))
 
   "User creating a message" should {
+
     "be successful given valid json" in {
       val message = MessageUtil.buildValidCustomerMessage()
 
       val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
-        .withHeaders(AuthUtil.buildUserToken())
+        .withHeaders(AuthUtil.buildNinoUserToken())
         .post(message)
         .futureValue
 
       response.status shouldBe 201
     }
 
-   "fail given invalid json" in {
-     val message = MessageUtil.buildInvalidCustomerMessage
+    "fail given invalid json" in {
+      val message = MessageUtil.buildInvalidCustomerMessage
 
-     val response = httpClient
+      val response = httpClient
        .url(resource("/two-way-message/message/customer/0/submit"))
-       .withHeaders(AuthUtil.buildUserToken())
+       .withHeaders(AuthUtil.buildNinoUserToken())
        .post(message)
        .futureValue
 
-     response.status shouldBe 400
-   }
- }
+      response.status shouldBe 400
+    }
 
- "Advisor responding" should {
-   "Forbidden when no access token" in {
-     val message = MessageUtil.buildValidAdviserResponse()
-     val validMessageId = MessageUtil.getValidMessageId()
+    "return Forbidden (403) when valid bearer token with SaUtr credentials and valid JSON payload but no Nino" in {
+      val message = MessageUtil.buildValidReplyMessage()
 
-     val response = httpClient
-       .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
-       .post(message)
-       .futureValue
+      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
+        .withHeaders(AuthUtil.buildSaUserToken())
+        .post(message).futureValue
 
-     response.status shouldBe 403
-   }
+      response.status shouldBe 403
+    }
+  }
 
-   "Forbidden when using user access token" in {
-     val message = MessageUtil.buildValidAdviserResponse()
-     val validMessageId = MessageUtil.getValidMessageId()
+  "Advisor responding" should {
 
-     val response = httpClient.url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
-       .withHttpHeaders(AuthUtil.buildUserToken())
-       .post(message)
-       .futureValue
+    "Forbidden when no access token" in {
+      val message = MessageUtil.buildValidReplyMessage()
+      val validMessageId = MessageUtil.getValidNinoMessageId()
 
-     response.status shouldBe 403
-   }
+      val response = httpClient
+        .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+        .post(message)
+        .futureValue
 
- "Access when access token" in {
-   val message = MessageUtil.buildValidAdviserResponse()
-   val validMessageId = MessageUtil.getValidMessageId()
+      response.status shouldBe 403
+    }
 
-   val response = httpClient.url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
-     .withHeaders(AuthUtil.buildStrideToken())
-     .post(message)
-     .futureValue
+    "Forbidden when using user access token" in {
+      val message = MessageUtil.buildValidReplyMessage()
+      val validMessageId = MessageUtil.getValidNinoMessageId()
 
-    response.status shouldBe 201
- }
-}
+      val response = httpClient
+        .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+        .withHttpHeaders(AuthUtil.buildNinoUserToken())
+        .post(message)
+        .futureValue
+
+      response.status shouldBe 403
+    }
+
+    "Access when access token" in {
+      val message = MessageUtil.buildValidReplyMessage()
+      val validMessageId = MessageUtil.getValidNinoMessageId()
+
+      val response = httpClient
+        .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+        .withHeaders(AuthUtil.buildStrideToken())
+        .post(message)
+        .futureValue
+
+      response.status shouldBe 201
+    }
+  }
+
+  "User responding to an advisor's message" should {
+
+    "return Created (201) when valid bearer token with Nino credentials and valid JSON payload" in {
+      val message = MessageUtil.buildValidReplyMessage()
+      val replyToMessageId = MessageUtil.getValidNinoMessageId()
+
+      val response = httpClient
+        .url(resource(s"/two-way-message/message/customer/0/$replyToMessageId/reply"))
+        .withHttpHeaders(AuthUtil.buildNinoUserToken())
+        .post(message)
+        .futureValue
+
+      response.status shouldBe 201
+    }
+
+    "return Unauthorized (401) when missing a valid bearer token" in {
+      val message = MessageUtil.buildValidReplyMessage()
+      val replyToMessageId = MessageUtil.getValidNinoMessageId()
+
+      val response = httpClient
+        .url(resource(s"/two-way-message/message/customer/0/$replyToMessageId/reply"))
+        .post(message)
+        .futureValue
+
+      response.status shouldBe 401
+    }
+
+    "return Bad Request (400) when providing an invalid payload" in {
+      val message = MessageUtil.buildInvalidReplyMessage()
+      val replyToMessageId = MessageUtil.getValidNinoMessageId()
+
+      val response = httpClient
+        .url(resource(s"/two-way-message/message/customer/0/$replyToMessageId/reply"))
+        .withHttpHeaders(AuthUtil.buildNinoUserToken())
+        .post(message)
+        .futureValue
+
+      response.status shouldBe 400
+    }
+  }
 
   object AuthUtil {
     lazy val authPort = 8500
@@ -103,7 +158,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
         | }
       """.stripMargin
 
-    private val GG_USER_PAYLOAD =
+    private val GG_NINO_USER_PAYLOAD =
       """
         | {
         |  "credId": "1234",
@@ -115,13 +170,40 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
         |  }
      """.stripMargin
 
-    def buildUserToken(): (String, String) = {
+    private val GG_SA_USER_PAYLOAD =
+      """
+        | {
+        |  "credId": "1235",
+        |  "affinityGroup": "Organisation",
+        |  "confidenceLevel": 100,
+        |  "credentialStrength": "none",
+        |  "enrolments": [
+        |      {
+        |        "key": "IR-SA",
+        |        "identifiers": [
+        |          {
+        |            "key": "UTR",
+        |            "value": "1234567890"
+        |          }
+        |        ],
+        |        "state": "Activated"
+        |      }
+        |    ]
+        |  }
+     """.stripMargin
+
+    private def buildUserToken(payload: String): (String, String) = {
       val response = httpClient.url(s"http://localhost:$ggAuthPort/government-gateway/session/login")
         .withHttpHeaders(("Content-Type", "application/json"))
-        .post(GG_USER_PAYLOAD).futureValue
+        .post(payload)
+        .futureValue
 
       ("Authorization", response.header("Authorization").get)
     }
+
+    def buildNinoUserToken(): (String, String) = buildUserToken(GG_NINO_USER_PAYLOAD)
+
+    def buildSaUserToken(): (String, String) = buildUserToken(GG_SA_USER_PAYLOAD)
 
     def buildStrideToken(): (String, String) = {
       val response = httpClient.url(s"http://localhost:$authPort/auth/sessions")
@@ -135,9 +217,10 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 
   object MessageUtil {
     import play.api.libs.json.{Json, Reads}
+    import scala.util.Random
 
     implicit val deserialiser: Reads[MessageId] = Json.reads[MessageId]
-    def generateContent() = BaseEncoding.base64().encode(s"Hello world! - ${System.currentTimeMillis()}".getBytes())
+    def generateContent(): String = BaseEncoding.base64().encode(s"Hello world! - ${Random.nextString(20)}".getBytes())
 
     case class MessageId(val id: String)
 
@@ -170,7 +253,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       Json.parse(jsonString).as[JsObject]
     }
 
-    def buildValidAdviserResponse(): JsObject = {
+    def buildValidReplyMessage(): JsObject = {
       val jsonString =
         s"""
            | {
@@ -180,9 +263,21 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       Json.parse(jsonString).as[JsObject]
     }
 
-    def getValidMessageId(): String = {
+    def buildInvalidReplyMessage(): JsObject = {
+      val jsonString =
+        s"""
+           | {
+           |   "c": "$generateContent"
+           | }
+      """.stripMargin
+      Json.parse(jsonString).as[JsObject]
+    }
+
+    def getValidNinoMessageId(): String = {
       val message = buildValidCustomerMessage()
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit")).withHeaders(AuthUtil.buildUserToken()).post(message).futureValue
+      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
+        .withHeaders(AuthUtil.buildNinoUserToken())
+        .post(message).futureValue
       Json.parse(response.body).as[MessageId].id
     }
   }

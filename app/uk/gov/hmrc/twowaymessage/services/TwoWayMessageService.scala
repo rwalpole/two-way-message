@@ -58,7 +58,8 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     implicit hc: HeaderCarrier): Future[Result] =
     postReply(twoWayMessageReply, replyTo, MessageType.Advisor, FormId.Reply)
 
-  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String): Future[Result] =
+  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(
+    implicit hc: HeaderCarrier): Future[Result] =
     postReply(twoWayMessageReply, replyTo, MessageType.Customer, FormId.Question)
 
   val errorResponse = (status: Int, message: String) => BadGateway(Json.toJson(Error(status, message)))
