@@ -61,7 +61,7 @@ class GformWSHttp @Inject()(
 
     val source: Source[FilePart[Source[ByteString, NotUsed]], NotUsed] = Source(
       FilePart(fileName, fileName, Some(contentType), Source.single(body)) :: Nil)
-    buildRequest(url).withHttpHeaders(headers: _*).post(source).map(new WSHttpResponse(_))
+    buildRequest(url).addHttpHeaders(headers: _*).post(source).map(new WSHttpResponse(_))
 
   }
 }
