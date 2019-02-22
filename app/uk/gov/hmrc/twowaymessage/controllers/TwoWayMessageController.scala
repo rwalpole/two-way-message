@@ -17,14 +17,15 @@
 package uk.gov.hmrc.twowaymessage.controllers
 
 import javax.inject.{ Inject, Singleton }
-
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
-import uk.gov.hmrc.auth.core.retrieve.{ Retrievals, ~ }
 import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.retrieve.Retrievals
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.gform.dms.{ DmsHtmlSubmission, DmsMetadata }
+import uk.gov.hmrc.gform.gformbackend.GformConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.WithJsonBody
@@ -35,8 +36,10 @@ import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 import scala.concurrent.{ ExecutionContext, Future }
 
 @Singleton
-class TwoWayMessageController @Inject()(twms: TwoWayMessageService, val authConnector: AuthConnector)(
-  implicit ec: ExecutionContext)
+class TwoWayMessageController @Inject()(
+  twms: TwoWayMessageService,
+  val authConnector: AuthConnector,
+  val gformConnector: GformConnector)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
 
   private val logger = Logger(this.getClass)
@@ -63,10 +66,17 @@ class TwoWayMessageController @Inject()(twms: TwoWayMessageService, val authConn
   }
 
   // Validates the customer's message payload and then posts the message
-  def validateAndPostMessage(nino: Nino, requestBody: JsValue): Future[Result] =
+  def validateAndPostMessage(nino: Nino, requestBody: JsValue)(implicit hc: HeaderCarrier): Future[Result] =
     requestBody.validate[TwoWayMessage] match {
-      case _: JsSuccess[_] => twms.post(nino, requestBody.as[TwoWayMessage])
-      case e: JsError      => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
+      case _: JsSuccess[_] => {
+        val dmsSubmission = DmsHtmlSubmission(
+          requestBody.as[TwoWayMessage].content,
+          DmsMetadata("2wsm-p800", "dmsCustomerId", "DMS-queue", "DMS-business-area"))
+        twms.post(nino, requestBody.as[TwoWayMessage]).andThen {
+          case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
+        }
+      }
+      case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
     }
 
   // Advisor replying to a customer message
