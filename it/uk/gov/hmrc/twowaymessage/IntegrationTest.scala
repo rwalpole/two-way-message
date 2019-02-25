@@ -28,7 +28,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
     "be successful given valid json" in {
       val message = MessageUtil.buildValidCustomerMessage()
 
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
+      val response = httpClient.url(resource("/two-way-message/message/customer/p800/submit"))
         .withHeaders(AuthUtil.buildNinoUserToken())
         .post(message)
         .futureValue
@@ -40,7 +40,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val message = MessageUtil.buildInvalidCustomerMessage
 
       val response = httpClient
-       .url(resource("/two-way-message/message/customer/0/submit"))
+       .url(resource("/two-way-message/message/customer/p800/submit"))
        .withHeaders(AuthUtil.buildNinoUserToken())
        .post(message)
        .futureValue
@@ -51,7 +51,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
     "return Forbidden (403) when valid bearer token with SaUtr credentials and valid JSON payload but no Nino" in {
       val message = MessageUtil.buildValidReplyMessage()
 
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
+      val response = httpClient.url(resource("/two-way-message/message/customer/p800/submit"))
         .withHeaders(AuthUtil.buildSaUserToken())
         .post(message).futureValue
 
@@ -107,7 +107,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val replyToMessageId = MessageUtil.getValidNinoMessageId()
 
       val response = httpClient
-        .url(resource(s"/two-way-message/message/customer/0/$replyToMessageId/reply"))
+        .url(resource(s"/two-way-message/message/customer/p800/$replyToMessageId/reply"))
         .withHttpHeaders(AuthUtil.buildNinoUserToken())
         .post(message)
         .futureValue
@@ -120,7 +120,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val replyToMessageId = MessageUtil.getValidNinoMessageId()
 
       val response = httpClient
-        .url(resource(s"/two-way-message/message/customer/0/$replyToMessageId/reply"))
+        .url(resource(s"/two-way-message/message/customer/p800/$replyToMessageId/reply"))
         .post(message)
         .futureValue
 
@@ -132,7 +132,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val replyToMessageId = MessageUtil.getValidNinoMessageId()
 
       val response = httpClient
-        .url(resource(s"/two-way-message/message/customer/0/$replyToMessageId/reply"))
+        .url(resource(s"/two-way-message/message/customer/p800/$replyToMessageId/reply"))
         .withHttpHeaders(AuthUtil.buildNinoUserToken())
         .post(message)
         .futureValue
@@ -275,7 +275,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 
     def getValidNinoMessageId(): String = {
       val message = buildValidCustomerMessage()
-      val response = httpClient.url(resource("/two-way-message/message/customer/0/submit"))
+      val response = httpClient.url(resource("/two-way-message/message/customer/p800/submit"))
         .withHeaders(AuthUtil.buildNinoUserToken())
         .post(message).futureValue
       Json.parse(response.body).as[MessageId].id
