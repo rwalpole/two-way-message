@@ -30,6 +30,7 @@ object Enquiry {
 
   abstract class EnquiryTemplate {
     val title : String
+    val dmsFormId: String
     val classificationType : String
     val businessArea : String
   }

@@ -74,7 +74,7 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       val nino = Nino("AB123456C")
       when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
-      val result = await(controller.validateAndPostMessage(nino, twoWayMessageGood))
+      val result = await(controller.validateAndPostMessage("p800", nino, twoWayMessageGood))
       result.header.status shouldBe Status.CREATED
     }
 

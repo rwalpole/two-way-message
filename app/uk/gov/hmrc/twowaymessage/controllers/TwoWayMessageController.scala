@@ -29,6 +29,7 @@ import uk.gov.hmrc.gform.gformbackend.GformConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.WithJsonBody
+import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
 import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
 import uk.gov.hmrc.twowaymessage.model.{ TwoWayMessage, TwoWayMessageReply }
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
@@ -48,7 +49,7 @@ class TwoWayMessageController @Inject()(
   def createMessage(queueId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     authorised(Enrolment("HMRC-NI")).retrieve(Retrievals.nino) {
-      case Some(ninoId) => validateAndPostMessage(Nino(ninoId), request.body)
+      case Some(ninoId) => validateAndPostMessage(queueId, Nino(ninoId), request.body)
       case _ =>
         Logger.debug("Can not retrieve user's nino, returning Forbidden - Not Authorised Error")
         Future.successful(Forbidden(Json.toJson("Not authorised")))
@@ -66,16 +67,21 @@ class TwoWayMessageController @Inject()(
   }
 
   // Validates the customer's message payload and then posts the message
-  def validateAndPostMessage(nino: Nino, requestBody: JsValue)(implicit hc: HeaderCarrier): Future[Result] =
+  def validateAndPostMessage(queueId:String, nino: Nino, requestBody: JsValue)(implicit hc: HeaderCarrier): Future[Result] =
     requestBody.validate[TwoWayMessage] match {
-      case _: JsSuccess[_] => {
-        val dmsSubmission = DmsHtmlSubmission(
-          requestBody.as[TwoWayMessage].content,
-          DmsMetadata("2wsm-p800", "dmsCustomerId", "DMS-queue", "DMS-business-area"))
-        twms.post(nino, requestBody.as[TwoWayMessage]).andThen {
-          case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
+      case _: JsSuccess[_] =>
+
+        Enquiry(queueId) match {
+          case Some(enquiryId) =>
+            val dmsMetaData = DmsMetadata(enquiryId.dmsFormId, nino.nino, enquiryId.classificationType,  enquiryId.businessArea)
+            val dmsSubmission = DmsHtmlSubmission(requestBody.as[TwoWayMessage].content, dmsMetaData)
+            twms.post(nino, requestBody.as[TwoWayMessage]).andThen {
+            case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
+            }
+
+          case None => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> s"Invalid EnquityId: $queueId")))
         }
-      }
+
       case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
     }
 

@@ -74,7 +74,7 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.successful(Some(nino.value)))
       when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
-      val result = await(testTwoWayMessageController.createMessage("queueName")(fakeRequest1))
+      val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
       status(result) shouldBe Status.CREATED
     }
 
