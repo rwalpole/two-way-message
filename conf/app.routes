@@ -4,4 +4,4 @@ POST       /message/customer/:queueId/submit            uk.gov.hmrc.twowaymessag
 POST       /message/advisor/:replyTo/reply              uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createAdvisorResponse(replyTo)
 POST       /message/customer/:queueId/:replyTo/reply    uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createCustomerResponse(queueId, replyTo)
 
-POST       /message/dms/submit                       uk.gov.hmrc.gform.dms.DmsSubmissionController.submitToDms()
+POST       /dms/submit                       uk.gov.hmrc.gform.dms.DmsSubmissionController.submitToDms()
