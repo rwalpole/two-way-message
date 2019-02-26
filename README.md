@@ -162,5 +162,48 @@ For integration tests to run successfully you need the following apps run by sm 
  - IDENTITY_VERIFICATION
  - USER_DETAILS
 
+## Note on DMS Submission
+
+To submit to DMS, two-way-message miscroservice calls either gform or internal re-implementation of the `/dms/submit` endpoint. 
+
+### Configuration settings for internal implementation:
+
+#### conf/application.conf
+
+```
+ gform {
+   host = localhost  # two-way-message host
+   port = 8970       # two-way-mesage port
+   path-prefix = /two-way-message
+ }
+```
+
+#### two-way-message.yaml of <app-config-[qa|development|staging|prod]>
+```
+    microservice.services.gform.host: two-way-message.protected.mdtp
+    microservice.services.gform.port: 443
+    microservice.services.gform.protocol: https
+    microservice.services.gform.path-prefix: /two-way-message
+```
+
+### Configuration settings for gfrom microservice:
+
+#### conf/application.conf
+
+```
+ gform {
+   host = localhost
+   port = 9196              # gform port
+   path-prefix = /gform
+ }
+```
+
+####  two-way-message.yaml of <app-config-[qa|development|staging|prod]>*
+```
+    microservice.services.gform.host: gform.protected.mdtp
+    microservice.services.gform.port: 443
+    microservice.services.gform.protocol: https
+    microservice.services.gform.path-prefix: /gform
+```
 ### License
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
