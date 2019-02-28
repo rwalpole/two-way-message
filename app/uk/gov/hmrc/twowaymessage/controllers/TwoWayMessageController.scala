@@ -72,16 +72,11 @@ class TwoWayMessageController @Inject()(
     requestBody.validate[TwoWayMessage] match {
       case _: JsSuccess[_] =>
         Enquiry(queueId) match {
-          case Some(enquiryId) =>
-            val dmsMetaData =
-              DmsMetadata(enquiryId.dmsFormId, nino.nino, enquiryId.classificationType, enquiryId.businessArea)
-            val dmsSubmission = DmsHtmlSubmission(requestBody.as[TwoWayMessage].content, dmsMetaData)
-            twms.post(queueId, nino, requestBody.as[TwoWayMessage]).andThen {
-              case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
-            }
-
-          case None =>
-            Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> s"Invalid EnquityId: $queueId")))
+          case Some(enquiryId) => {
+            val dmsMetaData = DmsMetadata(enquiryId.dmsFormId, nino.nino, enquiryId.classificationType, enquiryId.businessArea)
+            twms.post(nino, requestBody.as[TwoWayMessage], dmsMetaData)
+          }
+          case None => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> s"Invalid EnquityId: $queueId")))
         }
 
       case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))

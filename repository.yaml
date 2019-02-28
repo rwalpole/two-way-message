@@ -1,0 +1,4 @@
+leakDetectionExemptions:
+  - ruleId: 'ip_addresses'
+    filePaths:
+      - '/app/uk/gov/hmrc/twowaymessage/views/two_way_message.scala.html'

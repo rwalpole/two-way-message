@@ -27,15 +27,16 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
 import play.api.mvc.Results._
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
-import uk.gov.hmrc.auth.core.authorise.{ EmptyPredicate, Predicate }
+import play.api.test.{FakeHeaders, FakeRequest, Helpers}
+import uk.gov.hmrc.auth.core.authorise.{EmptyPredicate, Predicate}
 import uk.gov.hmrc.auth.core.retrieve.Retrievals
-import uk.gov.hmrc.auth.core.{ AuthConnector, Enrolment, InsufficientEnrolments, MissingBearerToken }
-import uk.gov.hmrc.domain.{ Nino, SaUtr }
+import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, InsufficientEnrolments, MissingBearerToken}
+import uk.gov.hmrc.domain.{Nino, SaUtr}
+import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.twowaymessage.assets.TestUtil
 import uk.gov.hmrc.twowaymessage.connector.mocks.MockAuthConnector
-import uk.gov.hmrc.twowaymessage.model.{ FormId, MessageType, TwoWayMessage, TwoWayMessageReply }
+import uk.gov.hmrc.twowaymessage.model.{FormId, MessageType, TwoWayMessage, TwoWayMessageReply}
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
 import scala.concurrent.Future
@@ -73,7 +74,7 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
     "return 201 (CREATED) when a message is successfully created by the message service with a valid Nino" in {
       val nino = Nino("AB123456C")
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.successful(Some(nino.value)))
-      when(mockMessageService.post(ArgumentMatchers.eq("p800"), ArgumentMatchers.eq(nino), any[TwoWayMessage]))
+      when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage], any[DmsMetadata]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
       status(result) shouldBe Status.CREATED

@@ -19,31 +19,34 @@ package uk.gov.hmrc.twowaymessage.services
 import java.util.UUID.randomUUID
 
 import com.google.inject.Inject
-import com.sun.security.jgss.InquireType
+import org.apache.commons.codec.binary.Base64
 import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc.Result
 import play.api.mvc.Results._
 import uk.gov.hmrc.domain.Nino
+import uk.gov.hmrc.gform.dms.{DmsHtmlSubmission, DmsMetadata}
+import uk.gov.hmrc.gform.gformbackend.GformConnector
 import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
+import uk.gov.hmrc.twowaymessage.model.{Error, _}
 import uk.gov.hmrc.twowaymessage.model.Error._
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
-import uk.gov.hmrc.twowaymessage.model.{ Error, _ }
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
-class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implicit ec: ExecutionContext) {
+class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
+                                     gformConnector: GformConnector,
+                                     servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
 
   implicit val hc = HeaderCarrier()
 
-  def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage): Future[Result] = {
-
-    val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
-
-    messageConnector.postMessage(body) map {
-      handleResponse
+  def post(nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result] = {
+    val body = createJsonForMessage(randomUUID.toString, MessageType.Customer, FormId.Question, twoWayMessage, nino)
+    messageConnector.postMessage(body) map { response =>
+      handleResponse(twoWayMessage,response,dmsMetaData)
     } recover handleError
   }
 
@@ -70,6 +73,20 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
   def handleResponse(response: HttpResponse): Result = response.status match {
     case CREATED => Created(Json.parse(response.body))
     case _       => errorResponse(response.status, response.body)
+  }
+
+  def handleResponse(message: TwoWayMessage, response: HttpResponse, dmsMetaData: DmsMetadata): Result = response.status match {
+    case CREATED => {
+      response.json.validate[Identifier].asOpt match {
+        case Some(identifier) => {
+          val dmsSubmission = DmsHtmlSubmission(createHtmlMessage(identifier.id,Nino(dmsMetaData.customerId),message), dmsMetaData)
+          gformConnector.submitToDmsViaGform(dmsSubmission)
+          Created(Json.parse(response.body))
+        }
+        case None =>  errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference")
+      }
+    }
+    case _ => errorResponse(response.status, response.body)
   }
 
   def handleError(): PartialFunction[Throwable, Result] = {
@@ -108,4 +125,12 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
       reply.content,
       Details(formId, Some(replyTo), metadata.details.threadId, metadata.details.enquiryType, metadata.details.adviser)
     )
+
+  def createHtmlMessage(messageId: String, nino: Nino, message: TwoWayMessage): String = {
+    val frontendUrl: String = servicesConfig.baseUrl("two-way-message-adviser-frontend")
+    val url = s"$frontendUrl/two-way-message-adviser-frontend/message/$messageId/reply"
+    val content = new String(Base64.decodeBase64(message.content), "UTF-8")
+    uk.gov.hmrc.twowaymessage.views.html.two_way_message(url, nino.nino, message.subject, content).body
+  }
+
 }
