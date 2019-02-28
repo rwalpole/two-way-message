@@ -19,6 +19,7 @@ package uk.gov.hmrc.twowaymessage.controllers
 import java.util.UUID
 
 import com.codahale.metrics.SharedMetricRegistries
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import play.api.http.Status
@@ -72,7 +73,7 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
     "return 201 (CREATED) when a message is successfully created by the message service with a valid Nino" in {
       val nino = Nino("AB123456C")
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.successful(Some(nino.value)))
-      when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage]))
+      when(mockMessageService.post(ArgumentMatchers.eq("p800"), ArgumentMatchers.eq(nino), any[TwoWayMessage]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
       status(result) shouldBe Status.CREATED
@@ -80,19 +81,25 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
 
     "return 403 (FORBIDDEN) when AuthConnector doesn't return a Nino" in {
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.successful(None))
-      val result = await(testTwoWayMessageController.createMessage("queueName")(fakeRequest1))
+      val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
+      status(result) shouldBe Status.FORBIDDEN
+    }
+
+    "return 403 (FORBIDDEN) when createMessage is presented with an invalid queue id" in {
+      mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.successful(None))
+      val result = await(testTwoWayMessageController.createMessage("other-queue-id")(fakeRequest1))
       status(result) shouldBe Status.FORBIDDEN
     }
 
     "return 401 (UNAUTHORIZED) when AuthConnector returns an exception that extends NoActiveSession" in {
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.failed(MissingBearerToken()))
-      val result = await(testTwoWayMessageController.createMessage("queueName")(fakeRequest1))
+      val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
       status(result) shouldBe Status.UNAUTHORIZED
     }
 
     "return 403 (FORBIDDEN) when AuthConnector returns an exception that doesn't extend NoActiveSession" in {
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.failed(InsufficientEnrolments()))
-      val result = await(testTwoWayMessageController.createMessage("queueName")(fakeRequest1))
+      val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
       status(result) shouldBe Status.FORBIDDEN
     }
 
@@ -105,10 +112,8 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
       val nino = Nino("AB123456C")
       mockAuthorise(Enrolment("HMRC-NI"))(Future.successful(Some(nino.value)))
       when(
-        mockMessageService.postCustomerReply(
-          any[TwoWayMessageReply],
-          org.mockito.ArgumentMatchers.eq("replyTo")
-        )(org.mockito.ArgumentMatchers.any[HeaderCarrier]))
+        mockMessageService.postCustomerReply(any[TwoWayMessageReply], ArgumentMatchers.eq("replyTo"))(
+          any[HeaderCarrier]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(testTwoWayMessageController.createCustomerResponse("queueName", "replyTo")(fakeRequest1))
       status(result) shouldBe Status.CREATED

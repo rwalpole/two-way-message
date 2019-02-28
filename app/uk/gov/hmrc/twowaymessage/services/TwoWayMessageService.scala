@@ -19,6 +19,7 @@ package uk.gov.hmrc.twowaymessage.services
 import java.util.UUID.randomUUID
 
 import com.google.inject.Inject
+import com.sun.security.jgss.InquireType
 import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -37,8 +38,10 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
 
   implicit val hc = HeaderCarrier()
 
-  def post(nino: Nino, twoWayMessage: TwoWayMessage): Future[Result] = {
-    val body = createJsonForMessage(randomUUID.toString, MessageType.Customer, FormId.Question, twoWayMessage, nino)
+  def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage): Future[Result] = {
+
+    val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
+
     messageConnector.postMessage(body) map {
       handleResponse
     } recover handleError
@@ -75,32 +78,27 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
     case e: HttpException       => errorResponse(e.responseCode, e.message)
   }
 
-  def createJsonForMessage(
-    id: String,
-    messageType: MessageType,
-    formId: FormId,
-    twoWayMessage: TwoWayMessage,
-    nino: Nino): Message = {
+  def createJsonForMessage(refId: String, twoWayMessage: TwoWayMessage, nino: Nino, queueId: String): Message = {
     val recipient = Recipient(TaxIdentifier(nino.name, nino.value), twoWayMessage.contactDetails.email)
     Message(
-      ExternalRef(id, "2WSM"),
+      ExternalRef(refId, "2WSM"),
       recipient,
-      messageType,
+      MessageType.Customer,
       twoWayMessage.subject,
       twoWayMessage.content,
-      Details(formId, None)
+      Details(FormId.Question, None, None, inquiryType = Some(queueId))
     )
   }
 
   def createJsonForReply(
-    id: String,
+    refId: String,
     messageType: MessageType,
     formId: FormId,
     metadata: MessageMetadata,
     reply: TwoWayMessageReply,
     replyTo: String): Message =
     Message(
-      ExternalRef(id, "2WSM"),
+      ExternalRef(refId, "2WSM"),
       Recipient(
         TaxIdentifier(metadata.recipient.identifier.name, metadata.recipient.identifier.value),
         metadata.recipient.email.getOrElse("")
@@ -108,6 +106,6 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector)(implici
       messageType,
       metadata.subject,
       reply.content,
-      Details(formId, Some(replyTo))
+      Details(formId, Some(replyTo), metadata.details.threadId, metadata.details.enquiryType, metadata.details.adviser)
     )
 }

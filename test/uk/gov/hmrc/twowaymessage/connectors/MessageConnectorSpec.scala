@@ -119,7 +119,14 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
           |      },
           |      "email":"someEmail@test.com"
           |   },
-          |   "subject":"SUBJECT"
+          |   "subject":"SUBJECT",
+          |   "details": {
+          |     "threadId":"5d12eb115f0000000205c150",
+          |     "enquiryType":"p800",
+          |     "adviser": {
+          |       "pidId":"adviser-id"
+          |     }
+          |   }
           |}
         """.stripMargin
 
@@ -137,6 +144,9 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
       result.recipient.email shouldBe Some("someEmail@test.com")
       result.recipient.regime shouldBe "REGIME"
       result.subject shouldBe "SUBJECT"
+      result.details.threadId shouldBe Some("5d12eb115f0000000205c150")
+      result.details.enquiryType shouldBe Some("p800")
+      result.details.adviser shouldBe Some(Adviser("adviser-id"))
     }
     SharedMetricRegistries.clear
   }

@@ -19,6 +19,7 @@ package uk.gov.hmrc.twowaymessage.controllers
 import java.util.UUID
 
 import com.codahale.metrics.SharedMetricRegistries
+import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest._
@@ -72,7 +73,7 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
 
     "return 201 (Created) when a message is successfully created in the message service " in {
       val nino = Nino("AB123456C")
-      when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage]))
+      when(mockMessageService.post(ArgumentMatchers.eq("p800"), ArgumentMatchers.eq(nino), any[TwoWayMessage]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(controller.validateAndPostMessage("p800", nino, twoWayMessageGood))
       result.header.status shouldBe Status.CREATED

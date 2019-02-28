@@ -53,10 +53,25 @@ case class Message(
 
 case class ExternalRef(id: String, source: String)
 
-case class Details(formId: FormId, replyTo: Option[String] = None)
+case class Adviser(pidId: String)
+object Adviser {
+  implicit val adviserFormat: Format[Adviser] = Json.format[Adviser]
+}
+
+case class Details(
+  formId: FormId,
+  replyTo: Option[String] = None,
+  threadId: Option[String] = None,
+  inquiryType: Option[String] = None,
+  adviser: Option[Adviser] = None)
+
+case class MetadataDetails(threadId: Option[String], enquiryType: Option[String], adviser: Option[Adviser])
+object MetadataDetails {
+  implicit val metadataDetailsFormat: Format[MetadataDetails] = Json.format[MetadataDetails]
+}
 
 final case class TaxIdWithName(name: String, value: String)
 
 final case class TaxEntity(regime: String, identifier: TaxIdWithName, email: Option[String] = None)
 
-final case class MessageMetadata(id: String, recipient: TaxEntity, subject: String)
+final case class MessageMetadata(id: String, recipient: TaxEntity, subject: String, details: MetadataDetails)
