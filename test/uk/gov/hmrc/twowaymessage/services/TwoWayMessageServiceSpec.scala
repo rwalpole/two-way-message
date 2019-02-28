@@ -85,14 +85,14 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           )
         )
 
-      val messageResult = await(messageService.post(nino, twoWayMessageExample,dmsMetadataExample))
+      val messageResult = await(messageService.post("p800",nino, twoWayMessageExample,dmsMetadataExample))
       messageResult.header.status shouldBe 201
     }
 
     "return 502 (Bad Gateway) when posting a message to the message service fails" in {
       when(mockMessageConnector.postMessage(any[Message])(any[HeaderCarrier]))
         .thenReturn(Future.successful(HttpResponse(Http.Status.BAD_REQUEST)))
-      val messageResult = await(messageService.post(nino, twoWayMessageExample,dmsMetadataExample))
+      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample,dmsMetadataExample))
       messageResult.header.status shouldBe 502
     }
 

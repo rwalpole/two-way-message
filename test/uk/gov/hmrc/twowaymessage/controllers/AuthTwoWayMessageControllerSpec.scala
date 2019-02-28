@@ -74,7 +74,7 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
     "return 201 (CREATED) when a message is successfully created by the message service with a valid Nino" in {
       val nino = Nino("AB123456C")
       mockAuthorise(Enrolment("HMRC-NI"), Retrievals.nino)(Future.successful(Some(nino.value)))
-      when(mockMessageService.post(org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage], any[DmsMetadata]))
+      when(mockMessageService.post(anyString, org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage], any[DmsMetadata]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(testTwoWayMessageController.createMessage("p800")(fakeRequest1))
       status(result) shouldBe Status.CREATED
