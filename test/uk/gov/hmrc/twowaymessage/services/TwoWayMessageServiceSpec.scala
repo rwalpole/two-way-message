@@ -54,7 +54,6 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     .injector()
 
   val messageService = injector.instanceOf[TwoWayMessageService]
-  val pdfService = injector.instanceOf[TestPdfCreator]
 
   val twoWayMessageReplyExample = TwoWayMessage(
     ContactDetails("someEmail@test.com"),
@@ -313,7 +312,6 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "return HTML as a string" in {
       val expectedHtml = <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
       val actualHtml = messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample)
-      pdfService.createPdf(actualHtml,new File("/Users/hmrc/Source/GitHub/hmrc/two-way-message/result.pdf"))
       assert(actualHtml.contains(expectedHtml))
     }
   }
