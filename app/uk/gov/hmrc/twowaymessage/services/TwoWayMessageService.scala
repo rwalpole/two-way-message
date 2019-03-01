@@ -45,7 +45,7 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
 
   def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result] = {
     val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
-    messageConnector.postMessage(body) map { response =>
+    messageConnector.postMessage(body) flatMap { response =>
       handleResponse(twoWayMessage,response,dmsMetaData)
     } recover handleError
   }
@@ -75,18 +75,19 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
     case _       => errorResponse(response.status, response.body)
   }
 
-  def handleResponse(message: TwoWayMessage, response: HttpResponse, dmsMetaData: DmsMetadata): Result = response.status match {
+  def handleResponse(message: TwoWayMessage, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] = response.status match {
     case CREATED => {
       response.json.validate[Identifier].asOpt match {
         case Some(identifier) => {
           val dmsSubmission = DmsHtmlSubmission(createHtmlMessage(identifier.id,Nino(dmsMetaData.customerId),message), dmsMetaData)
-          gformConnector.submitToDmsViaGform(dmsSubmission)
-          Created(Json.parse(response.body))
+          Future.successful(Created(Json.parse(response.body))).andThen {
+            case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
+          }
         }
-        case None =>  errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference")
+        case None =>  Future.successful(errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference"))
       }
     }
-    case _ => errorResponse(response.status, response.body)
+    case _ => Future.successful(errorResponse(response.status, response.body))
   }
 
   def handleError(): PartialFunction[Throwable, Result] = {
