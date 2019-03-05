@@ -316,4 +316,12 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     }
   }
 
+  "TwoWayMessageService.encodeToBase64String" should {
+    "return a Base64 encoded string" in {
+      val expectedBase64String = "VGhpcyBpcyBzb21lIHNhbXBsZSB0ZXh0Lg=="
+      val actualBase64String = messageService.encodeToBase64String("This is some sample text.")
+      actualBase64String shouldEqual expectedBase64String
+    }
+  }
+
 }

@@ -79,7 +79,8 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
     case CREATED => {
       response.json.validate[Identifier].asOpt match {
         case Some(identifier) => {
-          val dmsSubmission = DmsHtmlSubmission(createHtmlMessage(identifier.id,Nino(dmsMetaData.customerId),message), dmsMetaData)
+          val htmlMessage = createHtmlMessage(identifier.id,Nino(dmsMetaData.customerId),message)
+          val dmsSubmission = DmsHtmlSubmission(encodeToBase64String(htmlMessage), dmsMetaData)
           Future.successful(Created(Json.parse(response.body))).andThen {
             case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
           }
@@ -88,6 +89,10 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
       }
     }
     case _ => Future.successful(errorResponse(response.status, response.body))
+  }
+
+  def encodeToBase64String(text: String): String = {
+    Base64.encodeBase64String(text.getBytes("UTF-8"))
   }
 
   def handleError(): PartialFunction[Throwable, Result] = {
