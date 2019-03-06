@@ -133,8 +133,8 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
     )
 
   def createHtmlMessage(messageId: String, nino: Nino, message: TwoWayMessage): String = {
-    val frontendUrl: String = servicesConfig.baseUrl("two-way-message-adviser-frontend")
-    val url = s"$frontendUrl/two-way-message-adviser-frontend/message/$messageId/reply"
+    val frontendUrl: String = servicesConfig.getString("pdf-admin-prefix")
+    val url = s"$frontendUrl/message/$messageId/reply"
     val content = new String(Base64.decodeBase64(message.content), "UTF-8")
     uk.gov.hmrc.twowaymessage.views.html.two_way_message(url, nino.nino, message.subject, content).body
   }
