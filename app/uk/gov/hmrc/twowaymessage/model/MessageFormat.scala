@@ -62,7 +62,7 @@ case class Details(
   formId: FormId,
   replyTo: Option[String] = None,
   threadId: Option[String] = None,
-  inquiryType: Option[String] = None,
+  enquiryType: Option[String] = None,
   adviser: Option[Adviser] = None)
 
 case class MetadataDetails(threadId: Option[String], enquiryType: Option[String], adviser: Option[Adviser])

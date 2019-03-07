@@ -21,7 +21,7 @@ import java.io.File
 import com.codahale.metrics.SharedMetricRegistries
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{ Matchers, WordSpec }
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.HttpEntity.Strict
@@ -32,13 +32,13 @@ import play.api.test.Helpers._
 import play.mvc.Http
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
@@ -84,14 +84,14 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           )
         )
 
-      val messageResult = await(messageService.post("p800",nino, twoWayMessageExample,dmsMetadataExample))
+      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample))
       messageResult.header.status shouldBe 201
     }
 
     "return 502 (Bad Gateway) when posting a message to the message service fails" in {
       when(mockMessageConnector.postMessage(any[Message])(any[HeaderCarrier]))
         .thenReturn(Future.successful(HttpResponse(Http.Status.BAD_REQUEST)))
-      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample,dmsMetadataExample))
+      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample))
       messageResult.header.status shouldBe 502
     }
 
@@ -254,7 +254,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           MessageType.Customer,
           "QUESTION",
           "some base64-encoded-html",
-          Details(FormId.Question, None, None, inquiryType = Some("p800"))
+          Details(FormId.Question, None, None, enquiryType = Some("p800"))
         )
 
       val originalMessage = TwoWayMessage(
@@ -310,7 +310,8 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
 
   "TwoWayMessageService.createHtmlMessage" should {
     "return HTML as a string" in {
-      val expectedHtml = <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
+      val expectedHtml =
+        <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
       val actualHtml = messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample)
       assert(actualHtml.contains(expectedHtml))
     }

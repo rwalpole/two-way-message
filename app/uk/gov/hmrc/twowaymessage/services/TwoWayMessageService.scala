@@ -25,28 +25,29 @@ import play.api.libs.json._
 import play.api.mvc.Result
 import play.api.mvc.Results._
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.gform.dms.{DmsHtmlSubmission, DmsMetadata}
+import uk.gov.hmrc.gform.dms.{ DmsHtmlSubmission, DmsMetadata }
 import uk.gov.hmrc.gform.gformbackend.GformConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
-import uk.gov.hmrc.twowaymessage.model.{Error, _}
+import uk.gov.hmrc.twowaymessage.model.{ Error, _ }
 import uk.gov.hmrc.twowaymessage.model.Error._
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
-class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
-                                     gformConnector: GformConnector,
-                                     servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
+class TwoWayMessageService @Inject()(
+  messageConnector: MessageConnector,
+  gformConnector: GformConnector,
+  servicesConfig: ServicesConfig)(implicit ec: ExecutionContext) {
 
   implicit val hc = HeaderCarrier()
 
   def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result] = {
     val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
     messageConnector.postMessage(body) flatMap { response =>
-      handleResponse(twoWayMessage,response,dmsMetaData)
+      handleResponse(twoWayMessage, response, dmsMetaData)
     } recover handleError
   }
 
@@ -75,25 +76,25 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
     case _       => errorResponse(response.status, response.body)
   }
 
-  def handleResponse(message: TwoWayMessage, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] = response.status match {
-    case CREATED => {
-      response.json.validate[Identifier].asOpt match {
-        case Some(identifier) => {
-          val htmlMessage = createHtmlMessage(identifier.id,Nino(dmsMetaData.customerId),message)
-          val dmsSubmission = DmsHtmlSubmission(encodeToBase64String(htmlMessage), dmsMetaData)
-          Future.successful(Created(Json.parse(response.body))).andThen {
-            case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
+  def handleResponse(message: TwoWayMessage, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] =
+    response.status match {
+      case CREATED => {
+        response.json.validate[Identifier].asOpt match {
+          case Some(identifier) => {
+            val htmlMessage = createHtmlMessage(identifier.id, Nino(dmsMetaData.customerId), message)
+            val dmsSubmission = DmsHtmlSubmission(encodeToBase64String(htmlMessage), dmsMetaData)
+            Future.successful(Created(Json.parse(response.body))).andThen {
+              case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
+            }
           }
+          case None => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference"))
         }
-        case None =>  Future.successful(errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference"))
       }
+      case _ => Future.successful(errorResponse(response.status, response.body))
     }
-    case _ => Future.successful(errorResponse(response.status, response.body))
-  }
 
-  def encodeToBase64String(text: String): String = {
+  def encodeToBase64String(text: String): String =
     Base64.encodeBase64String(text.getBytes("UTF-8"))
-  }
 
   def handleError(): PartialFunction[Throwable, Result] = {
     case e: Upstream4xxResponse => errorResponse(e.upstreamResponseCode, e.message)
@@ -109,7 +110,7 @@ class TwoWayMessageService @Inject()(messageConnector: MessageConnector,
       MessageType.Customer,
       twoWayMessage.subject,
       twoWayMessage.content,
-      Details(FormId.Question, None, None, inquiryType = Some(queueId))
+      Details(FormId.Question, None, None, enquiryType = Some(queueId))
     )
   }
 
