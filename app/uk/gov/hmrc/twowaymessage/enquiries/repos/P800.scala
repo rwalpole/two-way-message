@@ -24,5 +24,5 @@ object P800 extends EnquiryTemplate {
 
   val dmsFormId:String = "P800"
   val classificationType: String = "Secure Messaging SA"
-  val businessArea: String = "PT Ops EK Customer Service Centre"
+  val businessArea: String = "PT Ops EK Customer Services"
 }
