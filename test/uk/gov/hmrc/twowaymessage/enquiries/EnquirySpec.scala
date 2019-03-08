@@ -39,7 +39,7 @@ class EnquirySpec extends WordSpec with Matchers {
     "find a businessArea for 'P800'" in {
       Enquiry("p800") match {
         case None => fail("Invalid enquiry key")
-        case Some(meteadata) => meteadata.businessArea shouldBe ("PT Ops EK Customer Service Centre")
+        case Some(meteadata) => meteadata.businessArea shouldBe ("PT Ops EK Customer Services")
       }
     }
   }
