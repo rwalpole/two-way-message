@@ -32,14 +32,14 @@ class EnquirySpec extends WordSpec with Matchers {
     "find a classificationType for 'P800'" in {
       Enquiry("p800") match {
         case None => fail("Invalid enquiry key")
-        case Some(meteadata) => meteadata.classificationType shouldBe ("Secure Messaging SA")
+        case Some(meteadata) => meteadata.classificationType shouldBe ("PSA-DFS Secure Messaging SA")
       }
     }
 
     "find a businessArea for 'P800'" in {
       Enquiry("p800") match {
         case None => fail("Invalid enquiry key")
-        case Some(meteadata) => meteadata.businessArea shouldBe ("PT Ops EK Customer Services")
+        case Some(meteadata) => meteadata.businessArea shouldBe ("PT Operations")
       }
     }
   }
