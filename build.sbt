@@ -30,8 +30,14 @@ lazy val microservice = Project(appName, file("."))
   .settings(publishingSettings: _*)
   .configs(IntegrationTest)
   .settings(integrationTestSettings(): _*)
-  .settings(resolvers += Resolver.jcenterRepo)
-  .settings(resolvers += Resolver.bintrayRepo("hmrc","releases"))
+  .settings(
+    resolvers ++= Seq(
+      Resolver.jcenterRepo,
+      Resolver.bintrayRepo("hmrc","releases"),
+      Resolver.bintrayRepo("jetbrains", "markdown"),
+      "bintray-djspiewak-maven" at "https://dl.bintray.com/djspiewak/maven"
+    )
+  )
   .settings(
     majorVersion                     := 0,
     libraryDependencies              ++= AppDependencies.compile ++ AppDependencies.test,
