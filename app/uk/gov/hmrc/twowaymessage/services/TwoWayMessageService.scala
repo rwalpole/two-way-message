@@ -54,7 +54,7 @@ class TwoWayMessageService @Inject()(
   def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String, messageType: MessageType, formId: FormId)(
     implicit hc: HeaderCarrier): Future[Result] =
     (for {
-      metadata <- messageConnector.getMessageMetadata(replyTo)
+      metadata <- getMessageMetaData(replyTo)
       body = createJsonForReply(randomUUID.toString, messageType, formId, metadata, twoWayMessageReply, replyTo)
       resp <- messageConnector.postMessage(body)
     } yield resp) map {
@@ -75,6 +75,8 @@ class TwoWayMessageService @Inject()(
     case CREATED => Created(Json.parse(response.body))
     case _       => errorResponse(response.status, response.body)
   }
+
+  def getMessageMetaData(messageId: String)(implicit hc: HeaderCarrier): Future[MessageMetadata] = messageConnector.getMessageMetadata(messageId)
 
   def handleResponse(message: TwoWayMessage, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] =
     response.status match {

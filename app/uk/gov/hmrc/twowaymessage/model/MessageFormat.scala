@@ -37,6 +37,12 @@ object MessageFormat {
   implicit val taxEntityReads: Reads[TaxEntity] = Json.reads[TaxEntity]
 
   implicit val messageMetadataReads: Reads[MessageMetadata] = Json.reads[MessageMetadata]
+
+  implicit val taxIdWithNameWrites: Writes[TaxIdWithName] = Json.writes[TaxIdWithName]
+
+  implicit val taxEntityWrites: Writes[TaxEntity] = Json.writes[TaxEntity]
+
+  implicit val messageMetadataWrites: Writes[MessageMetadata] = Json.writes[MessageMetadata]
 }
 
 case class Recipient(taxIdentifier: TaxIdentifier, email: String)
