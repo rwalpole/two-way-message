@@ -21,24 +21,25 @@ import java.io.File
 import com.codahale.metrics.SharedMetricRegistries
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.{ Matchers, WordSpec }
+import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.HttpEntity.Strict
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, JsString}
 import play.api.test.Helpers._
 import play.mvc.Http
+import play.twirl.api.Html
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
@@ -83,7 +84,11 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
             HttpResponse(Http.Status.CREATED, Some(Json.parse("{\"id\":\"5c18eb2e6f0000100204b161\"}")))
           )
         )
-
+      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.OK, None, Map.empty, Some("<p>Some message text.</p>"))
+        )
+      )
       val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample))
       messageResult.header.status shouldBe 201
     }
@@ -264,8 +269,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       )
 
       val nino = Nino("AB123456C")
-      val actual = messageService
-        .createJsonForMessage("123412342314", originalMessage, nino, "p800")
+      val actual = messageService.createJsonForMessage("123412342314", originalMessage, nino, "p800")
       assert(actual.equals(expected))
     }
 
@@ -295,8 +299,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       )
 
       val reply = TwoWayMessageReply("some base64-encoded-html")
-      val actual = messageService
-        .createJsonForReply("some-random-id", MessageType.Advisor, FormId.Reply, metadata, reply, "reply-to-id")
+      val actual = messageService.createJsonForReply("some-random-id", MessageType.Advisor, FormId.Reply, metadata, reply, "reply-to-id")
       assert(actual.equals(expected))
     }
   }
@@ -310,18 +313,40 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
 
   "TwoWayMessageService.createHtmlMessage" should {
     "return HTML as a string" in {
+
+      val htmlString = <h1 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h1>
+        <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+        <p>What happens if I refuse to pay?</p>
+          <hr/>
+        <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
+        <p class="message_time faded-text--small">This message was sent to you on 12 March, 2019</p>
+        <p>I'm sorry but this tax bill is for you and you need to pay it.
+
+        You can pay it online of at your bank.</p>
+          <hr/>
+        <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
+        <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+        <p>I have been sent a tax bill that I'm sure is for someone else as I don't earn any money. Please can you check.</p>.mkString
+
+      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.OK, None, Map.empty, Some(htmlString))
+        )
+      )
       val expectedHtml =
         <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
-      val actualHtml = messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject)
-      assert(actualHtml.contains(expectedHtml))
-    }
-  }
+      val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
+      PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
+      assert(actualHtml.get.contains(expectedHtml))
 
-  "TwoWayMessageService.encodeToBase64String" should {
-    "return a Base64 encoded string" in {
-      val expectedBase64String = "VGhpcyBpcyBzb21lIHNhbXBsZSB0ZXh0Lg=="
-      val actualBase64String = messageService.encodeToBase64String("This is some sample text.")
-      actualBase64String shouldEqual expectedBase64String
+    }
+
+    "return an empty string" in {
+      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(HttpResponse(Http.Status.BAD_GATEWAY))
+      )
+      val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
+      actualHtml shouldBe None
     }
   }
 

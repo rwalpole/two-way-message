@@ -20,7 +20,7 @@
 
 @import uk.gov.hmrc.twowaymessage.model.TwoWayMessage
 
-@(url: String, nino: String, subject: String, content: String)
+@(url: String, nino: String, subject: String, content: Html)
 <!DOCTYPE html>
 <html lang="en" class="govuk-template ">
     <head>
@@ -44,6 +44,7 @@
         #header_bottom {border-bottom-color:black;}
         #nino {padding-right:20px;}
         #internal {font-family:Arial,sans-serif;font-size:1.5rem;float:right}
+        #indented {padding-left: 20px;}
         </style>
     </head>
     <body class="govuk-template__body ">
@@ -77,10 +78,10 @@
                 <h2 class="govuk-heading-l">To reply to this message, copy this link:</h2>
                 <p class="govuk-body-l">@url</p>
                 <hr/>
-                <h2 class="govuk-heading-l">Submission details</h2>
-                <p class="govuk-body-l"><span class="govuk-font-weight-bold">What is your question about?</span> @subject</p>
+                <h2 class="govuk-heading-l">Conversation details</h2>
+                <p class="govuk-body-l"><span class="govuk-font-weight-bold">Subject:</span> @subject</p>
                 <hr />
-                <p class="govuk-body-l">@content</p>
+                <div id="indented" class="govuk-body-l">@content</div>
                 <hr />
             </main>
         </div>
