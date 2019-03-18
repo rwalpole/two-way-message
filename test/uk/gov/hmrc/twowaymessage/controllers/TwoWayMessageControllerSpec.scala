@@ -18,26 +18,30 @@ package uk.gov.hmrc.twowaymessage.controllers
 
 import java.util.UUID
 
+import akka.http.scaladsl.model.HttpHeader.ParsingResult.Ok
 import com.codahale.metrics.SharedMetricRegistries
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.Inside.inside
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.Results._
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.twowaymessage.model.{TwoWayMessage, TwoWayMessageReply}
+import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
@@ -104,6 +108,21 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       result.header.status shouldBe Status.BAD_REQUEST
     }
 
+    "return 200 (Ok) when metadata for a valid message id is requested correctly" in {
+      val dummyMetadata = MessageMetadata("123", TaxEntity("abc", TaxIdWithName("a","b")), "subject", MetadataDetails(None,None,None))
+      when(mockMessageService.getMessageMetadata(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Some(dummyMetadata)))
+      val result = await(controller.getRecipientMetadata("123")(FakeRequest()))
+      result.header.status shouldBe Status.OK
+    }
+
+    "return 404 (Not Found) when metadata for a invalid message id is requested correctly" in {
+      //val dummyMetadata = MessageMetadata("123", TaxEntity("abc", TaxIdWithName("a","b")), "subject", MetadataDetails(None,None,None))
+      when(mockMessageService.getMessageMetadata(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(None))
+      val result = await(controller.getRecipientMetadata("123")(FakeRequest()))
+      result.header.status shouldBe Status.NOT_FOUND
+    }
+
     SharedMetricRegistries.clear
   }
+
 }

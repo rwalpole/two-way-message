@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.twowaymessage.services
 
-import java.io.File
-
 import com.codahale.metrics.SharedMetricRegistries
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -27,10 +25,9 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.HttpEntity.Strict
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{Json, JsString}
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.mvc.Http
-import play.twirl.api.Html
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -38,6 +35,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -122,7 +120,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "return 201 (Created) when a message is successfully created by the message service" in {
 
       when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(messageMetadata))
+        .thenReturn(Future.successful(HttpResponse(Http.Status.OK, Some(Json.toJson(messageMetadata)))))
 
       when(
         mockMessageConnector
@@ -138,7 +136,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "return 502 (Bad Gateway) when posting a message to the message service fails with a 409 Conflict" in {
 
       when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(messageMetadata))
+        .thenReturn(Future.successful(HttpResponse(Http.Status.OK, Some(Json.toJson(messageMetadata)))))
 
       val postMessageResponse = HttpResponse(
         Http.Status.CONFLICT,
@@ -195,7 +193,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "return 201 (Created) when a message is successfully created by the message service" in {
 
       when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(messageMetadata))
+        .thenReturn(Future.successful(HttpResponse(Http.Status.OK, Some(Json.toJson(messageMetadata)))))
 
       when(
         mockMessageConnector
@@ -211,7 +209,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "return 502 (Bad Gateway) when posting a message to the message service fails with a 409 Conflict" in {
 
       when(mockMessageConnector.getMessageMetadata(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(messageMetadata))
+        .thenReturn(Future.successful(HttpResponse(Http.Status.OK, Some(Json.toJson(messageMetadata)))))
 
       val postMessageResponse = HttpResponse(
         Http.Status.CONFLICT,
@@ -336,7 +334,8 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       val expectedHtml =
         <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
       val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
-      PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
+      /* The following can only be used for local testing of PDF generation as wkhtmltopdf is not available on the build server */
+      //PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
       assert(actualHtml.get.contains(expectedHtml))
 
     }

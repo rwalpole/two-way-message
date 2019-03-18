@@ -19,7 +19,7 @@ package uk.gov.hmrc.twowaymessage.services
 import java.util.UUID.randomUUID
 
 import com.google.inject.Inject
-import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
+import play.api.http.Status.{OK,CREATED, INTERNAL_SERVER_ERROR}
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.Created
@@ -34,6 +34,7 @@ import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry.EnquiryTemplate
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import uk.gov.hmrc.twowaymessage.model._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,7 +50,15 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
     xml.child
   }
 
-  override def getMessageMetaData(messageId: String)(implicit hc: HeaderCarrier): Future[MessageMetadata] = messageConnector.getMessageMetadata(messageId)
+  override def getMessageMetadata(messageId: String)(implicit hc: HeaderCarrier): Future[Option[MessageMetadata]] = {
+    messageConnector.getMessageMetadata(messageId).flatMap(  response =>
+      response.status match {
+        case OK =>
+          val metadata = Json.parse(response.body).validate[MessageMetadata]
+          Future.successful(metadata.asOpt)
+        case _ => Future.successful(None)
+      })
+  }
 
   override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result] = {
     val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
@@ -64,14 +73,14 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
 
   override def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result] =
     (for {
-      metadata <- getMessageMetaData(replyTo)
-      queueId <- metadata.details.enquiryType
+      metadata <- getMessageMetadata(replyTo)
+      queueId <- metadata.get.details.enquiryType
         .fold[Future[String]](Future.failed(new Exception(s"Unable to get DMS queue id for $replyTo")))(Future.successful)
       enquiryId <- Enquiry(queueId).fold[Future[EnquiryTemplate]](Future.failed(new Exception(s"Unknown $queueId")))(Future.successful)
-      dmsMetaData = DmsMetadata(enquiryId.dmsFormId, metadata.recipient.identifier.value, enquiryId.classificationType, enquiryId.businessArea)
-      body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata, twoWayMessageReply, replyTo)
+      dmsMetaData = DmsMetadata(enquiryId.dmsFormId, metadata.get.recipient.identifier.value, enquiryId.classificationType, enquiryId.businessArea)
+      body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata.get, twoWayMessageReply, replyTo)
       postMessageResponse <- messageConnector.postMessage(body)
-      dmsHandleResponse <- handleResponse(twoWayMessageReply.content, metadata.subject, postMessageResponse, dmsMetaData)
+      dmsHandleResponse <- handleResponse(twoWayMessageReply.content, metadata.get.subject, postMessageResponse, dmsMetaData)
     } yield dmsHandleResponse) recover handleError
 
   override def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] = {
@@ -96,8 +105,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
   private def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String, messageType: MessageType, formId: FormId)(
     implicit hc: HeaderCarrier): Future[Result] =
     (for {
-      metadata <- messageConnector.getMessageMetadata(replyTo)
-      body = createJsonForReply(randomUUID.toString, messageType, formId, metadata, twoWayMessageReply, replyTo)
+      metadata <- getMessageMetadata(replyTo)
+      body = createJsonForReply(randomUUID.toString, messageType, formId, metadata.get, twoWayMessageReply, replyTo)
       resp <- messageConnector.postMessage(body)
     } yield resp) map {
       handleResponse

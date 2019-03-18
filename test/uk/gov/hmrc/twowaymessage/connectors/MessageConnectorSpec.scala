@@ -28,11 +28,13 @@ import play.api.Mode
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 import scala.concurrent.ExecutionContext
 
@@ -138,7 +140,8 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
               .withStatus(Status.OK)
               .withBody(jsonResponseBody)))
 
-      val result = await(messageConnector.getMessageMetadata(replyTo)(new HeaderCarrier()))
+      val httpResult = await(messageConnector.getMessageMetadata(replyTo)(new HeaderCarrier()))
+      val result = Json.toJson(httpResult.body).validate[MessageMetadata].asOpt.get
       result.id shouldBe "5c18eb166f0000110204b160"
       result.recipient.identifier shouldBe TaxIdWithName("HMRC-NI", "AB123456C")
       result.recipient.email shouldBe Some("someEmail@test.com")

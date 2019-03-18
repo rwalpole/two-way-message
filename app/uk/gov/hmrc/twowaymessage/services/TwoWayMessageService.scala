@@ -40,7 +40,7 @@ trait TwoWayMessageService {
 
   val errorResponse: ErrorFunction = (status: Int, message: String) => BadGateway(Json.toJson(Error(status, message)))
 
-  def getMessageMetaData(messageId: String)(implicit hc: HeaderCarrier): Future[MessageMetadata]
+  def getMessageMetadata(messageId: String)(implicit hc: HeaderCarrier): Future[Option[MessageMetadata]]
 
   def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result]
 
