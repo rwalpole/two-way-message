@@ -17,23 +17,22 @@
 package uk.gov.hmrc.twowaymessage.controllers
 
 import javax.inject.{Inject, Singleton}
-
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.Retrievals
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.gform.dms.{DmsHtmlSubmission, DmsMetadata}
+import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.gform.gformbackend.GformConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.WithJsonBody
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
-import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
-import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
+import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
 import scala.concurrent.{ExecutionContext, Future}

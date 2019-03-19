@@ -35,7 +35,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
-import uk.gov.hmrc.twowaymessage.model.MessageFormat._
+import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 
 import scala.concurrent.{ExecutionContext, Future}
 

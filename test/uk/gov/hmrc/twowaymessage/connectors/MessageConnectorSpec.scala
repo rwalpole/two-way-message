@@ -28,13 +28,13 @@ import play.api.Mode
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, JsSuccess}
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.model._
-import uk.gov.hmrc.twowaymessage.model.MessageFormat._
+import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 
 import scala.concurrent.ExecutionContext
 
@@ -141,15 +141,8 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
               .withBody(jsonResponseBody)))
 
       val httpResult = await(messageConnector.getMessageMetadata(replyTo)(new HeaderCarrier()))
-      val result = Json.toJson(httpResult.body).validate[MessageMetadata].asOpt.get
-      result.id shouldBe "5c18eb166f0000110204b160"
-      result.recipient.identifier shouldBe TaxIdWithName("HMRC-NI", "AB123456C")
-      result.recipient.email shouldBe Some("someEmail@test.com")
-      result.recipient.regime shouldBe "REGIME"
-      result.subject shouldBe "SUBJECT"
-      result.details.threadId shouldBe Some("5d12eb115f0000000205c150")
-      result.details.enquiryType shouldBe Some("p800")
-      result.details.adviser shouldBe Some(Adviser("adviser-id"))
+      httpResult.status shouldBe (200)
+      Json.parse(httpResult.body).validate[MessageMetadata] shouldBe a[JsSuccess[MessageMetadata]]
     }
     SharedMetricRegistries.clear
   }

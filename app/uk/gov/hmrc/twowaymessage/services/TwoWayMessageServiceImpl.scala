@@ -19,7 +19,7 @@ package uk.gov.hmrc.twowaymessage.services
 import java.util.UUID.randomUUID
 
 import com.google.inject.Inject
-import play.api.http.Status.{OK,CREATED, INTERNAL_SERVER_ERROR}
+import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.Created
@@ -32,10 +32,10 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry.EnquiryTemplate
-import uk.gov.hmrc.twowaymessage.model.FormId.FormId
-import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
-import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.model.FormId.FormId
+import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
+import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Node

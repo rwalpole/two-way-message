@@ -32,17 +32,6 @@ object MessageFormat {
 
   implicit val messageWrites: OWrites[Message] = Json.writes[Message]
 
-  implicit val taxIdWithNameReads: Reads[TaxIdWithName] = Json.reads[TaxIdWithName]
-
-  implicit val taxEntityReads: Reads[TaxEntity] = Json.reads[TaxEntity]
-
-  implicit val messageMetadataReads: Reads[MessageMetadata] = Json.reads[MessageMetadata]
-
-  implicit val taxIdWithNameWrites: Writes[TaxIdWithName] = Json.writes[TaxIdWithName]
-
-  implicit val taxEntityWrites: Writes[TaxEntity] = Json.writes[TaxEntity]
-
-  implicit val messageMetadataWrites: Writes[MessageMetadata] = Json.writes[MessageMetadata]
 }
 
 case class Recipient(taxIdentifier: TaxIdentifier, email: String)
@@ -70,14 +59,3 @@ case class Details(
   threadId: Option[String] = None,
   enquiryType: Option[String] = None,
   adviser: Option[Adviser] = None)
-
-case class MetadataDetails(threadId: Option[String], enquiryType: Option[String], adviser: Option[Adviser])
-object MetadataDetails {
-  implicit val metadataDetailsFormat: Format[MetadataDetails] = Json.format[MetadataDetails]
-}
-
-final case class TaxIdWithName(name: String, value: String)
-
-final case class TaxEntity(regime: String, identifier: TaxIdWithName, email: Option[String] = None)
-
-final case class MessageMetadata(id: String, recipient: TaxEntity, subject: String, details: MetadataDetails)
