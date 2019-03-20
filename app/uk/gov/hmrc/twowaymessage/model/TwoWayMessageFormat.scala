@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.twowaymessage.model
 
-import play.api.libs.json.{ Json, Reads, Writes }
+import play.api.libs.json.{Json, Reads}
 
 object TwoWayMessageFormat {
 
@@ -28,25 +28,11 @@ object TwoWayMessageFormat {
 }
 
 case class ContactDetails(email: String)
+
 case class TwoWayMessage(
   contactDetails: ContactDetails,
   subject: String,
   content: String,
   replyTo: Option[String] = None)
+
 case class TwoWayMessageReply(content: String)
-
-object FormId extends Enumeration {
-
-  type FormId = Value
-
-  val Question = Value("2WSM-question")
-  val Reply = Value("2WSM-reply")
-}
-
-object MessageType extends Enumeration {
-
-  type MessageType = Value
-
-  val Advisor = Value("2wsm-advisor")
-  val Customer = Value("2wsm-customer")
-}

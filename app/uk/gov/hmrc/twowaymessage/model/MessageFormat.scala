@@ -17,8 +17,9 @@
 package uk.gov.hmrc.twowaymessage.model
 
 import play.api.libs.json._
-import MessageType._
-import FormId._
+import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.twowaymessage.model.FormId.FormId
+import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
 object MessageFormat {
 
@@ -32,6 +33,22 @@ object MessageFormat {
 
   implicit val messageWrites: OWrites[Message] = Json.writes[Message]
 
+}
+
+object FormId extends Enumeration {
+
+  type FormId = Value
+
+  val Question = Value("2WSM-question")
+  val Reply = Value("2WSM-reply")
+}
+
+object MessageType extends Enumeration {
+
+  type MessageType = Value
+
+  val Advisor = Value("2wsm-advisor")
+  val Customer = Value("2wsm-customer")
 }
 
 case class Recipient(taxIdentifier: TaxIdentifier, email: String)
@@ -59,3 +76,4 @@ case class Details(
   threadId: Option[String] = None,
   enquiryType: Option[String] = None,
   adviser: Option[Adviser] = None)
+

@@ -42,15 +42,15 @@ trait TwoWayMessageService {
 
   def getMessageMetadata(messageId: String)(implicit hc: HeaderCarrier): Future[Option[MessageMetadata]]
 
-  def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result]
+  def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result]
 
   def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
 
   def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
 
-  def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result]
+  def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result]
 
-  def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String): Future[Option[String]]
+  def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String)(implicit hc: HeaderCarrier): Future[Option[String]]
 
   def createJsonForMessage(refId: String, twoWayMessage: TwoWayMessage, nino: Nino, queueId: String): Message = {
     val recipient = Recipient(TaxIdentifier(nino.name, nino.value), twoWayMessage.contactDetails.email)

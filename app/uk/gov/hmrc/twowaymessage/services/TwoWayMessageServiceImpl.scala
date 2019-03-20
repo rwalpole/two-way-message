@@ -60,7 +60,7 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       })
   }
 
-  override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata): Future[Result] = {
+  override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result] = {
     val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
     messageConnector.postMessage(body) flatMap { response =>
       handleResponse(twoWayMessage.content, twoWayMessage.subject, response, dmsMetaData)
@@ -83,14 +83,14 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       dmsHandleResponse <- handleResponse(twoWayMessageReply.content, metadata.get.subject, postMessageResponse, dmsMetaData)
     } yield dmsHandleResponse) recover handleError
 
-  override def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] = {
+  override def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result] = {
     val dmsSubmission = DmsHtmlSubmission(encodeToBase64String(html), dmsMetaData)
     Future.successful(Created(Json.parse(response.body))).andThen {
       case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
     }
   }
 
-  override def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String): Future[Option[String]] = {
+  override def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
     import XmlTransformService._
     val frontendUrl: String = servicesConfig.getString("pdf-admin-prefix")
     val url = s"$frontendUrl/message/$messageId/reply"
@@ -112,7 +112,7 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       handleResponse
     } recover handleError
 
-  private def handleResponse(content: String, subject: String, response: HttpResponse, dmsMetaData: DmsMetadata): Future[Result] =
+  private def handleResponse(content: String, subject: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result] =
     response.status match {
       case CREATED =>
         response.json.validate[Identifier].asOpt match {
@@ -126,7 +126,7 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       case _ => Future.successful(errorResponse(response.status, response.body))
     }
 
-  private def getMessageContent(messageId: String): Future[Option[String]] = {
+  private def getMessageContent(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
     messageConnector.getMessageContent(messageId).flatMap(response =>
       getContent(response) match {
         case Some(content) => Future successful Some(content)
