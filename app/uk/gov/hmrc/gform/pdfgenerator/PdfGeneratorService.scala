@@ -18,7 +18,6 @@ package uk.gov.hmrc.gform.pdfgenerator
 
 import javax.inject.{ Inject, Singleton }
 import play.mvc.Http.{ HeaderNames, MimeTypes }
-import uk.gov.hmrc.gform.connectors.PdfGeneratorConnector
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future

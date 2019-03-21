@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.gform.connectors
+package uk.gov.hmrc.gform.pdfgenerator
 
 import javax.inject.Inject
 import play.api.Logger
@@ -22,18 +22,17 @@ import uk.gov.hmrc.gform.auditing.loggingHelpers
 import uk.gov.hmrc.gform.wshttp.GformWSHttp
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class PdfGeneratorConnector @Inject()(servicesConfig: ServicesConfig, wSHttp: GformWSHttp) {
+class PdfGeneratorConnector @Inject()(servicesConfig: ServicesConfig, wSHttp: GformWSHttp)(implicit ec: ExecutionContext) {
 
   //TODO: use stream
   def generatePDF(payload: Map[String, Seq[String]], headers: Seq[(String, String)])(
     implicit hc: HeaderCarrier): Future[Array[Byte]] = {
     Logger.info(s"generate pdf, ${loggingHelpers.cleanHeaderCarrierHeader(hc)}")
     val url = s"$baseURL/pdf-generator-service/generate"
-    wSHttp.buildRequest(url).withHeaders(headers: _*).post(payload).flatMap { response =>
+    wSHttp.buildRequest(url).withHttpHeaders(headers: _*).post(payload).flatMap { response =>
       {
         val status = response.status
         if (status >= 200 && status < 300) {
@@ -46,5 +45,5 @@ class PdfGeneratorConnector @Inject()(servicesConfig: ServicesConfig, wSHttp: Gf
   }
 
   private val serviceName = "pdf-generator"
-  lazy val baseURL = servicesConfig.baseUrl(serviceName) + servicesConfig.getConfString(s"$serviceName.base-path", "")
+  lazy val baseURL: String = servicesConfig.baseUrl(serviceName) + servicesConfig.getConfString(s"$serviceName.base-path", "")
 }
