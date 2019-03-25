@@ -22,7 +22,7 @@ import scala.xml.{Elem, Node, NodeSeq, Text}
 
 object XmlTransformService {
 
-  val dateRegex: Regex = """[0-9]{1,2}\s[a-zA-Z]*,\s[0-9]{4}""".r
+  val dateRegex: Regex = """[0-9]{1,2}\s[a-zA-Z]*,?\s[0-9]{4}""".r
 
   private def getStripElementRule(elementName: String): RewriteRule = {
     new RewriteRule {
@@ -40,7 +40,7 @@ object XmlTransformService {
           elem.copy(child = elem.child collect {
             case Text(str) => dateRegex.findFirstIn(str) match {
               case Some(date) => if(str.toLowerCase.contains("you sent")){
-                boldSpan(date, text = "Customer")
+                boldSpan(date, text = "the customer")
               } else { boldSpan(date, text = "HMRC") }
               case None => Text(str)
             }
@@ -51,7 +51,7 @@ object XmlTransformService {
   }
 
   private def boldSpan(date: String, text: String): Elem = {
-    <span><span class="govuk-font-weight-bold">{date}</span> from {text}</span>
+    <span><span class="govuk-font-weight-bold">{date}</span> by {text}</span>
   }
 
   def stripH1(nodes: Seq[Node]): Seq[Node] = {

@@ -43,24 +43,24 @@ class XmlTransformServiceSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  val xml1: NodeSeq = <p class="message_time faded-text--small">This message was sent to you on 12 March, 2019</p>
-  val xml2: NodeSeq = <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+  val xml1: NodeSeq = <p class="message_time faded-text--small">This message was sent to you on 12 March 2019</p>
+  val xml2: NodeSeq = <p class="message_time faded-text--small">You sent this message on 12 March 2019</p>
 
   "XmlTransformService.updateDateText" should {
     "update the p tag 'message_time' text with 'from HMRC'" in {
-      val expectedXml = List(<p class="message_time faded-text--small"><span><span class="govuk-font-weight-bold">12 March, 2019</span> from HMRC</span></p>)
+      val expectedXml = List(<p class="message_time faded-text--small"><span><span class="govuk-font-weight-bold">12 March 2019</span> by HMRC</span></p>)
       val result = XmlTransformService.updateDatePara(xml1)
       result.mkString shouldBe expectedXml.mkString
     }
 
     "update the p tag with class 'message_time' text with 'from Customer'" in {
-      val expectedXml = List(<p class="message_time faded-text--small"><span><span class="govuk-font-weight-bold">12 March, 2019</span> from Customer</span></p>)
+      val expectedXml = List(<p class="message_time faded-text--small"><span><span class="govuk-font-weight-bold">12 March 2019</span> by the customer</span></p>)
       val result = XmlTransformService.updateDatePara(xml2)
       result.mkString shouldBe expectedXml.mkString
     }
 
     "not update the p tag text when it is not of class 'message_time'" in {
-      val xml3 = List(<p class="faded-text--small">This message was sent to you on 12 March, 2019</p>)
+      val xml3 = List(<p class="faded-text--small">This message was sent to you on 12 March 2019</p>)
       val result = XmlTransformService.updateDatePara(xml3)
       result shouldBe xml3
     }
@@ -72,9 +72,9 @@ class XmlTransformServiceSpec extends WordSpec with Matchers with MockitoSugar {
     }
 
     "only update the p tag that contains a date" in {
-      val xml5 = List(<p class="message_time faded-text--small">This message was sent to you on 12 March, 2019</p>,
+      val xml5 = List(<p class="message_time faded-text--small">This message was sent to you on 12 March 2019</p>,
         <p class="message_time faded-text--small">This message was sent to you</p>)
-      val expectedXml =  List(<p class="message_time faded-text--small"><span><span class="govuk-font-weight-bold">12 March, 2019</span> from HMRC</span></p>,
+      val expectedXml =  List(<p class="message_time faded-text--small"><span><span class="govuk-font-weight-bold">12 March 2019</span> by HMRC</span></p>,
         <p class="message_time faded-text--small">This message was sent to you</p>)
       val result = XmlTransformService.updateDatePara(xml5)
       result.mkString shouldBe expectedXml.mkString

@@ -313,17 +313,17 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "return HTML as a string" in {
 
       val htmlString = <h1 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h1>
-        <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+        <p class="message_time faded-text--small">You sent this message on 12 March 2019</p>
         <p>What happens if I refuse to pay?</p>
           <hr/>
         <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
-        <p class="message_time faded-text--small">This message was sent to you on 12 March, 2019</p>
+        <p class="message_time faded-text--small">This message was sent to you on 12 March 2019</p>
         <p>I'm sorry but this tax bill is for you and you need to pay it.
 
         You can pay it online of at your bank.</p>
           <hr/>
         <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
-        <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+        <p class="message_time faded-text--small">You sent this message on 12 March 2019</p>
         <p>I have been sent a tax bill that I'm sure is for someone else as I don't earn any money. Please can you check.</p>.mkString
 
       when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
@@ -335,7 +335,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
       val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
       /* The following can only be used for local testing of PDF generation as wkhtmltopdf is not available on the build server */
-      //PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
+      PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
       assert(actualHtml.get.contains(expectedHtml))
 
     }
