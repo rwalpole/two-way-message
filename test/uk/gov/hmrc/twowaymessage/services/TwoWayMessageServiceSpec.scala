@@ -335,7 +335,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
       val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
       /* The following can only be used for local testing of PDF generation as wkhtmltopdf is not available on the build server */
-      PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
+      //PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
       assert(actualHtml.get.contains(expectedHtml))
 
     }
