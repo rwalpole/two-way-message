@@ -36,7 +36,6 @@ import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 @Singleton
 class TwoWayMessageController @Inject()(
@@ -66,11 +65,11 @@ class TwoWayMessageController @Inject()(
     }
   }
 
-  def getMessagesListBy(messageId: String): Action[AnyContent] = Action.async { implicit request =>
+  def getRecipientMessageContentBy(messageId: String): Action[AnyContent] = Action.async { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-    twms.findMessagesBy(messageId).map {
-      case Left(messages) => Ok(Json.toJson(messages))
-      case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
+    twms.getMessageContentBy(messageId).map {
+      case Some(m) => Ok(m)
+      case None => NotFound
     }
   }
 

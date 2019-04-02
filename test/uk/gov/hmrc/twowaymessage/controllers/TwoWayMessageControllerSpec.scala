@@ -37,14 +37,13 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.twowaymessage.assets.Fixtures
 import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with Fixtures with MockitoSugar {
+class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
   val mockMessageService = mock[TwoWayMessageService]
 
@@ -124,15 +123,17 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       result.header.status shouldBe Status.NOT_FOUND
     }
 
-    "return 200 (Ok) when messages are  requested correctly" in {
-      when(mockMessageService.findMessagesBy(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Left(List(testMessage, testMessage))))
-      val result = await(controller.getMessagesListBy("123")(FakeRequest()))
+    "return 200 (Ok) when message content for a valid message id is requested correctly" in {
+      val dummyContent = "dummy content"
+      when(mockMessageService.getMessageContentBy(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Some(dummyContent)))
+      val result = await(controller.getRecipientMessageContentBy("123")(FakeRequest()))
       result.header.status shouldBe Status.OK
     }
-    "return 400 () when messages are  requested incorrectly" in {
-      when(mockMessageService.findMessagesBy(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Right("")))
-      val result = await(controller.getMessagesListBy("123")(FakeRequest()))
-      result.header.status shouldBe Status.BAD_REQUEST
+
+    "return 404 (Not Found) when content for a invalid message id is requested correctly" in {
+      when(mockMessageService.getMessageContentBy(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(None))
+      val result = await(controller.getRecipientMessageContentBy("123")(FakeRequest()))
+      result.header.status shouldBe Status.NOT_FOUND
     }
 
     SharedMetricRegistries.clear

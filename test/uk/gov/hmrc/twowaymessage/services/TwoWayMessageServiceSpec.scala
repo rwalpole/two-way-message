@@ -33,14 +33,13 @@ import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.twowaymessage.assets.Fixtures
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with Fixtures with MockitoSugar {
+class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
   implicit val mockExecutionContext = mock[ExecutionContext]
   implicit val mockHeaderCarrier = mock[HeaderCarrier]
@@ -248,32 +247,6 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     SharedMetricRegistries.clear
   }
 
-  "TwoWayMessageService.findMessagesListBy" should {
-
-    val fixtureMessages = v3Messages("123456", "654321")
-    "return list of messages if successfully fetched from the message service" in {
-      when(
-        mockMessageConnector
-          .getMessages(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(
-          HttpResponse(Http.Status.OK, Some(Json.parse(fixtureMessages)))))
-      val messagesResult = await(messageService.findMessagesBy("1234567890"))
-      messagesResult.left.get.head.externalRef.id should be("123456")
-    }
-
-    val invalidFixtureMessages = "{}"
-    "return error if invalid message list json" in {
-        when(
-            mockMessageConnector
-                .getMessages(any[String])(any[HeaderCarrier]))
-            .thenReturn(Future.successful(
-                HttpResponse(Http.Status.OK, Some(Json.parse(invalidFixtureMessages)))))
-        val messagesResult = await(messageService.findMessagesBy("1234567890"))
-        messagesResult.right should not be(None)
-    }
-    SharedMetricRegistries.clear
-  }
-
   "Generated JSON" should {
 
     "be correct for a two-way message posted by a customer" in {
@@ -372,6 +345,42 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         Future.successful(HttpResponse(Http.Status.BAD_GATEWAY))
       )
       val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
+      actualHtml shouldBe None
+    }
+  }
+
+  "TwoWayMessageService.getMessageContentBy" should {
+    "return Html content of the message" in {
+
+      val htmlString = <h1 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h1>
+        <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+        <p>What happens if I refuse to pay?</p>
+          <hr/>
+        <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
+        <p class="message_time faded-text--small">This message was sent to you on 12 March, 2019</p>
+        <p>I'm sorry but this tax bill is for you and you need to pay it.
+
+        You can pay it online of at your bank.</p>
+          <hr/>
+        <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
+        <p class="message_time faded-text--small">You sent this message on 12 March, 2019</p>
+        <p>I have been sent a tax bill that I'm sure is for someone else as I don't earn any money. Please can you check.</p>.mkString
+
+      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.OK, None, Map.empty, Some(htmlString))
+        )
+      )
+      val actualHtml = await(messageService.getMessageContentBy("123"))
+      assert(actualHtml.get.contains(htmlString))
+
+    }
+
+    "return None if unable to get message content" in {
+      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(HttpResponse(Http.Status.BAD_GATEWAY))
+      )
+      val actualHtml = await(messageService.getMessageContentBy("123"))
       actualHtml shouldBe None
     }
   }
