@@ -16,23 +16,45 @@
 
 package uk.gov.hmrc.twowaymessage.model
 
+import org.joda.time.LocalDate
 import play.api.libs.json._
 import play.api.libs.json.{Json, Reads}
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
+import play.api.libs.json.JodaReads
+import play.api.libs.json.JodaWrites
 
 object MessageFormat {
 
-  implicit val taxpayerNameWrites: Writes[TaxpayerName] = Json.writes[TaxpayerName]
-  implicit val taxIdentifierWrites: Writes[TaxIdentifier] = Json.writes[TaxIdentifier]
+  implicit val taxpayerNameWrites: Format[TaxpayerName] = Json.format[TaxpayerName]
 
-  implicit val recipientWrites: Writes[Recipient] = Json.writes[Recipient]
+  implicit val taxIdentifierFormat: Format[TaxIdentifier] = Json.format[TaxIdentifier]
 
-  implicit val detailsWrites: OWrites[Details] = Json.writes[Details]
+  implicit val recipientFormat: Format[Recipient] = Json.format[Recipient]
 
-  implicit val externalRefWrites: OWrites[ExternalRef] = Json.writes[ExternalRef]
+  implicit val externalRefFormat: Format[ExternalRef] = Json.format[ExternalRef]
 
-  implicit val messageWrites: OWrites[Message] = Json.writes[Message]
+  implicit val dateFormat: Format[LocalDate] = Format[LocalDate](JodaReads.jodaLocalDateReads("yyyy-MM-dd"), JodaWrites.jodaLocalDateWrites("yyyy-MM-dd"))
+
+  implicit val formIdFormat: Format[FormId] =
+    Format(
+      Reads.enumNameReads(FormId),
+      Writes.enumNameWrites
+    )
+
+  implicit val messageTypeFormat: Format[MessageType] =
+    Format(
+      Reads.enumNameReads(MessageType),
+      Writes.enumNameWrites
+    )
+
+  implicit val detailsFormat: Format[Details] = Json.format[Details]
+
+  implicit val detailsV3Format: Format[DetailsV3] = Json.format[DetailsV3]
+
+  implicit val messageFormat: Format[Message] = Json.format[Message]
+
+  implicit val messageV3Format: Format[MessageV3] = Json.format[MessageV3]
 
 }
 
@@ -83,3 +105,17 @@ case class Details(
   enquiryType: Option[String] = None,
   adviser: Option[Adviser] = None)
 
+case class DetailsV3(
+  `type`: MessageType,
+  form: FormId,
+  issueDate: Option[LocalDate],
+  replyTo: Option[String] = None,
+  enquiryType: Option[String] = None,
+  adviser: Option[Adviser] = None)
+
+case class MessageV3 (
+  subject: String,
+  body: Option[DetailsV3],
+  validFrom: LocalDate,
+  content: Option[String]
+)
