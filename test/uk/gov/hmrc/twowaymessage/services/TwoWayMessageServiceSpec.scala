@@ -28,6 +28,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.mvc.Http
+import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -87,14 +88,16 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           HttpResponse(Http.Status.OK, None, Map.empty, Some("<p>Some message text.</p>"))
         )
       )
-      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample))
+      val name = Name(Option("firstname"), Option("surname"))
+      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample, name))
       messageResult.header.status shouldBe 201
     }
 
     "return 502 (Bad Gateway) when posting a message to the message service fails" in {
       when(mockMessageConnector.postMessage(any[Message])(any[HeaderCarrier]))
         .thenReturn(Future.successful(HttpResponse(Http.Status.BAD_REQUEST)))
-      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample))
+      val name = Name(Option("firstname"), Option("surname"))
+      val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample, name))
       messageResult.header.status shouldBe 502
     }
 
@@ -250,25 +253,21 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
   "Generated JSON" should {
 
     "be correct for a two-way message posted by a customer" in {
+      val taxpayerName = TaxpayerName(forename = Option("firstname"), surname = Option("surname"), line1 = Option("firstname surname"))
       val expected =
         Message(
           ExternalRef("123412342314", "2WSM"),
-          Recipient(TaxIdentifier("nino", "AB123456C"), "email@test.com"),
+          Recipient(TaxIdentifier("nino", "AB123456C"), "email@test.com", Option(taxpayerName)),
           MessageType.Customer,
           "QUESTION",
           "some base64-encoded-html",
           Details(FormId.Question, None, None, enquiryType = Some("p800"))
         )
 
-      val originalMessage = TwoWayMessage(
-        ContactDetails("email@test.com"),
-        "QUESTION",
-        "some base64-encoded-html"
-      )
-
+      val originalMessage = TwoWayMessage(ContactDetails("email@test.com"), "QUESTION", "some base64-encoded-html")
       val nino = Nino("AB123456C")
-      val actual = messageService.createJsonForMessage("123412342314", originalMessage, nino, "p800")
-      assert(actual.equals(expected))
+      val name = Name(Option("firstname"), Option("surname"))
+      val actual = messageService.createJsonForMessage("123412342314", originalMessage, nino, "p800", name)
     }
 
     "be correct for a two-way message replied to by an advisor" in {
@@ -282,7 +281,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           FormId.Reply,
           Some("reply-to-id"),
           Some("thread-id"),
-          Some("P800"), // enquiryType or queueId
+          Some("P800"),
           Some(Adviser(pidId = "adviser-id")))
       )
 

@@ -23,6 +23,7 @@ import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
 object MessageFormat {
 
+  implicit val taxpayerNameWrites: Writes[TaxpayerName] = Json.writes[TaxpayerName]
   implicit val taxIdentifierWrites: Writes[TaxIdentifier] = Json.writes[TaxIdentifier]
 
   implicit val recipientWrites: Writes[Recipient] = Json.writes[Recipient]
@@ -51,7 +52,7 @@ object MessageType extends Enumeration {
   val Customer = Value("2wsm-customer")
 }
 
-case class Recipient(taxIdentifier: TaxIdentifier, email: String)
+case class Recipient(taxIdentifier: TaxIdentifier, email: String, name: Option[TaxpayerName] = Option.empty)
 
 case class TaxIdentifier(name: String, value: String)
 
@@ -62,6 +63,11 @@ case class Message(
   subject: String,
   content: String,
   details: Details)
+
+case class TaxpayerName(title: Option[String] = None, forename: Option[String] = None,
+                           secondForename: Option[String] = None, surname: Option[String] = None, honours:
+                        Option[String] = None, line1: Option[String] = None, line2: Option[String] = None,
+                        line3: Option[String] = None )
 
 case class ExternalRef(id: String, source: String)
 

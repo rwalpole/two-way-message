@@ -24,6 +24,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.Created
 import play.twirl.api.Html
+import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.{DmsHtmlSubmission, DmsMetadata}
 import uk.gov.hmrc.gform.gformbackend.GformConnector
@@ -60,8 +61,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       })
   }
 
-  override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result] = {
-    val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId)
+  override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata, name: Name)(implicit hc: HeaderCarrier): Future[Result] = {
+    val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId, name)
     messageConnector.postMessage(body) flatMap { response =>
       handleResponse(twoWayMessage.content, twoWayMessage.subject, response, dmsMetaData)
     } recover handleError
