@@ -111,6 +111,7 @@ trait TwoWayMessageService {
 
   def deriveAddressedName(name: Name): Option[String] = (name.name, name.lastName) match {
     case (Some(n), Some(l)) => Some(s"$n $l")
+    case (Some(n), None) => Some(n)
     case _ => None
   }
 

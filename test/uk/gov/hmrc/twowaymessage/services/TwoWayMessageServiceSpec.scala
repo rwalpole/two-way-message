@@ -326,6 +326,27 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       val actual = messageService.createJsonForReply("some-random-id", MessageType.Advisor, FormId.Reply, metadata, reply, "reply-to-id")
       assert(actual.equals(expected))
     }
+
+    "when deriving users name when full name is there, then it should be expected" in {
+      val name = Name(Option("Firstname"), Option("Surname"))
+      val actual = messageService.deriveAddressedName(name)
+      val expected = Option("Firstname Surname")
+      assert(actual.equals(expected))
+    }
+
+    "when deriving users name when only first name is there, then it should be expected" in {
+      val name = Name(Option("Firstname"), None)
+      val actual = messageService.deriveAddressedName(name)
+      val expected = Option("Firstname")
+      assert(actual.equals(expected))
+    }
+
+    "when deriving users name when only no name is present, then None should be expected" in {
+      val name = Name(None, None)
+      val actual = messageService.deriveAddressedName(name)
+      val expected = None
+      assert(actual.equals(expected))
+    }
   }
 
   val htmlMessageExample = TwoWayMessage(
