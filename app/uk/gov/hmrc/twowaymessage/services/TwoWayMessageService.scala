@@ -89,6 +89,8 @@ trait TwoWayMessageService {
   def encodeToBase64String(text: String): String =
     Base64.encodeBase64String(text.getBytes("UTF-8"))
 
+  def findMessagesBy(messageId: String)(implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]]
+
   protected def getContent(response: HttpResponse): Option[String] = {
     response.status match {
       case OK => Some(response.body)

@@ -37,6 +37,7 @@ object AppDependencies {
     "com.typesafe.play" %% "play" % "2.6.20",
     "com.typesafe.play" %% "play-functional" % "2.6.10",
     "com.typesafe.play" %% "play-json" % "2.6.10",
+    "com.typesafe.play" %% "play-json-joda" % "2.6.7",
     "uk.gov.hmrc" %% "domain"  % "5.3.0",
     "javax.inject" % "javax.inject" % "1",
     "com.typesafe.play" %% "twirl-api" % "1.3.15",
