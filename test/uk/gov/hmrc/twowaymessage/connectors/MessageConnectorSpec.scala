@@ -164,7 +164,7 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
 
       val httpResult = await(messageConnector.getMessages(messageId)(new HeaderCarrier()))
       httpResult.status shouldBe (200)
-      Json.parse(httpResult.body).validate[List[MessageV3]] shouldBe a[JsSuccess[List[MessageV3]]]
+      Json.parse(httpResult.body).validate[List[ConversationItem]] shouldBe a[JsSuccess[List[ConversationItem]]]
     }
     SharedMetricRegistries.clear
   }

@@ -35,9 +35,10 @@ trait Fixtures {
       Some(Adviser(pidId = "adviser-id")))
   )
 
-  val testMessageV3 = MessageV3(
+  val testMessageV3 = ConversationItem(
     subject = "test subject",
-    body = Some(DetailsV3(
+    body = Some(
+      ConversationItemDetails(
       `type` = MessageType.Advisor,
       form = FormId.Reply,
       issueDate = Some(LocalDate.now),

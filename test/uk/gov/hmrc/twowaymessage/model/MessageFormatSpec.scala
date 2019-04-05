@@ -71,8 +71,8 @@ class MessageFormatSpec extends WordSpec with Fixtures with Matchers {
     "read v3 message as defined in message microservice " in {
       val id = "123456"
       val json = Json.parse(v3Message(s"${id}"))
-      val messageResult = json.validate[MessageV3]
-      messageResult should (matchPattern { case _:JsSuccess[MessageV3] =>})
+      val messageResult = json.validate[ConversationItem]
+      messageResult should (matchPattern { case _:JsSuccess[ConversationItem] =>})
       messageResult.get.validFrom.toString should be("2013-12-01")
       messageResult.get.body.get.`type` should be(MessageType.Advisor)
     }
@@ -81,8 +81,8 @@ class MessageFormatSpec extends WordSpec with Fixtures with Matchers {
       val id1 = "123456"
       val id2 = "654321"
       val json = Json.parse(v3Messages(id1, id2))
-      val messageResult = json.validate[List[MessageV3]]
-      messageResult should (matchPattern { case _:JsSuccess[List[MessageV3]] =>})
+      val messageResult = json.validate[List[ConversationItem]]
+      messageResult should (matchPattern { case _:JsSuccess[List[ConversationItem]] =>})
     }
   }
 }

@@ -50,11 +50,11 @@ object MessageFormat {
 
   implicit val detailsFormat: Format[Details] = Json.format[Details]
 
-  implicit val detailsV3Format: Format[DetailsV3] = Json.format[DetailsV3]
+  implicit val detailsV3Format: Format[ConversationItemDetails] = Json.format[ConversationItemDetails]
 
   implicit val messageFormat: Format[Message] = Json.format[Message]
 
-  implicit val messageV3Format: Format[MessageV3] = Json.format[MessageV3]
+  implicit val messageV3Format: Format[ConversationItem] = Json.format[ConversationItem]
 
 }
 
@@ -105,7 +105,7 @@ case class Details(
   enquiryType: Option[String] = None,
   adviser: Option[Adviser] = None)
 
-case class DetailsV3(
+case class ConversationItemDetails(
   `type`: MessageType,
   form: FormId,
   issueDate: Option[LocalDate],
@@ -113,9 +113,9 @@ case class DetailsV3(
   enquiryType: Option[String] = None,
   adviser: Option[Adviser] = None)
 
-case class MessageV3 (
+case class ConversationItem (
   subject: String,
-  body: Option[DetailsV3],
+  body: Option[ConversationItemDetails],
   validFrom: LocalDate,
   content: Option[String]
 )
