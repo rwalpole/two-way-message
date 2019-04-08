@@ -78,7 +78,8 @@ trait TwoWayMessageService {
       ExternalRef(refId, "2WSM"),
       Recipient(
         TaxIdentifier(metadata.recipient.identifier.name, metadata.recipient.identifier.value),
-        metadata.recipient.email.getOrElse("")
+        metadata.recipient.email.getOrElse(""),
+        metadata.taxpayerName
       ),
       messageType,
       metadata.subject,

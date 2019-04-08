@@ -136,7 +136,7 @@ class TwoWayMessageController @Inject()(
     implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
       authorised(Enrolment("HMRC-NI")) {
-        validateAndPostCustomerResponse(request.body, replyTo)
+          validateAndPostCustomerResponse(request.body, replyTo)
       } recover handleError
   }
 

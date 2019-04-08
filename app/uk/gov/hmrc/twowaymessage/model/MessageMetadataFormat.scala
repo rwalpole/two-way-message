@@ -26,6 +26,8 @@ object MessageMetadataFormat {
 
   implicit val metadataDetailsFormat: Format[MetadataDetails] = Json.format[MetadataDetails]
 
+  implicit val taxpayerFormat: Format[TaxpayerName] = Json.format[TaxpayerName]
+
   implicit val messageMetadataFormat: Format[MessageMetadata] = Json.format[MessageMetadata]
 
 }
@@ -36,4 +38,4 @@ case class TaxEntity(regime: String, identifier: TaxIdWithName, email: Option[St
 
 case class MetadataDetails(threadId: Option[String], enquiryType: Option[String], adviser: Option[Adviser])
 
-case class MessageMetadata(id: String, recipient: TaxEntity, subject: String, details: MetadataDetails)
+case class MessageMetadata(id: String, recipient: TaxEntity, subject: String, details: MetadataDetails, taxpayerName: Option[TaxpayerName] = None)
