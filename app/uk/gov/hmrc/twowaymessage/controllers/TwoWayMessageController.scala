@@ -147,4 +147,12 @@ class TwoWayMessageController @Inject()(
       case _: JsSuccess[_] => twms.postCustomerReply(requestBody.as[TwoWayMessageReply], replyTo)
       case e: JsError      => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
     }
+
+
+  def getCurrentResponseTime(formType: String): Action[AnyContent] = Action.async { implicit request =>
+    Enquiry(formType) match {
+      case Some(form) => Future.successful(Ok(Json.obj("responseTime" -> form.responseTime)))
+      case _ => Future.successful(NotFound)
+    }
+  }
 }

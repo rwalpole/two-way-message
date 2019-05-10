@@ -150,6 +150,16 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       result.header.status shouldBe Status.BAD_REQUEST
     }
 
+    "return response time when response time is requested for valid enquiry type" in {
+      val result = controller.getCurrentResponseTime("p800")(FakeRequest())
+      contentAsString(result) shouldEqual """{"responseTime":"7 days"}"""
+    }
+
+    "return 404 when response time requested for invalid enquiry type" in {
+      val result = await(controller.getCurrentResponseTime("IP4U")(FakeRequest()))
+      result.header.status shouldBe 404
+    }
+    
     SharedMetricRegistries.clear
   }
 

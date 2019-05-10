@@ -26,8 +26,8 @@ import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.twowaymessage.model.{Error, _}
-import uk.gov.hmrc.twowaymessage.model.Error._
+import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
+import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
@@ -56,6 +56,7 @@ trait TwoWayMessageService {
   def getMessageContentBy(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]]
 
   def createJsonForMessage(refId: String, twoWayMessage: TwoWayMessage, nino: Nino, queueId: String, name: Name): Message = {
+    val responseTime = Enquiry(queueId).get.responseTime
     Message(
       ExternalRef(refId, "2WSM"),
       Recipient(
@@ -66,9 +67,9 @@ trait TwoWayMessageService {
         )
       ),
       MessageType.Customer,
-      twoWayMessage.subject,
+      s"We will reply in $responseTime",
       twoWayMessage.content,
-      Details(FormId.Question, None, None, enquiryType = Some(queueId))
+      Details(FormId.Question, None, None, enquiryType = Some(queueId), waitTime = Some(responseTime))
     )
   }
 

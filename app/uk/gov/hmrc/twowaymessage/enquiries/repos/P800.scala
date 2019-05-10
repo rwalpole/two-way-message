@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.twowaymessage.enquiries.repos
 
+import play.api.Play
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry.EnquiryTemplate
 
 object P800 extends EnquiryTemplate {
@@ -25,4 +26,7 @@ object P800 extends EnquiryTemplate {
   val dmsFormId:String = "P800"
   val classificationType: String = "PSA-DFS Secure Messaging SA"
   val businessArea: String = "PT Operations"
+  lazy val responseTime: String = Play.current.configuration.getString("forms.p800.reponseTime").get
+
+
 }

@@ -20,7 +20,7 @@ import uk.gov.hmrc.twowaymessage.enquiries.repos.P800
 
 object Enquiry {
 
-  def apply (enq: String):Option[EnquiryTemplate] = enquiries.get(enq)
+  def apply (enq: String):Option[EnquiryTemplate] = enquiries.get(enq.toLowerCase)
 
 
   private val enquiries = Map[String, EnquiryTemplate](
@@ -33,6 +33,7 @@ object Enquiry {
     val dmsFormId: String
     val classificationType : String
     val businessArea : String
+    val responseTime : String
   }
 
 }

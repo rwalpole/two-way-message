@@ -103,7 +103,8 @@ case class Details(
   replyTo: Option[String] = None,
   threadId: Option[String] = None,
   enquiryType: Option[String] = None,
-  adviser: Option[Adviser] = None)
+  adviser: Option[Adviser] = None,
+  waitTime: Option[String] = None)
 
 case class ConversationItemDetails(
   `type`: MessageType,
