@@ -74,7 +74,7 @@ class MessageFormatSpec extends WordSpec with Fixtures with Matchers {
       val messageResult = json.validate[ConversationItem]
       messageResult should (matchPattern { case _:JsSuccess[ConversationItem] =>})
       messageResult.get.validFrom.toString should be("2013-12-01")
-      messageResult.get.body.get.`type` should be(MessageType.Advisor)
+      messageResult.get.body.get.`type` should be(MessageType.Adviser)
     }
 
    "read conversation items as defined in message microservice " in {

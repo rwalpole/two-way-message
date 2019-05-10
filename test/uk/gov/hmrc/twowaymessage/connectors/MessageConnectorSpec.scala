@@ -130,7 +130,8 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
           |     "adviser": {
           |       "pidId":"adviser-id"
           |     }
-          |   }
+          |   },
+          |   "messageDate":"08 May 2019"
           |}
         """.stripMargin
 

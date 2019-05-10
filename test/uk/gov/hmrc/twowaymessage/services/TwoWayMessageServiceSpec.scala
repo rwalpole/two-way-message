@@ -105,7 +105,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     SharedMetricRegistries.clear
   }
 
-  "TwoWayMessageService.postAdvisorReply" should {
+  "TwoWayMessageService.postAdviserReply" should {
 
     val messageMetadata = MessageMetadata(
       "5c18eb166f0000110204b160",
@@ -118,7 +118,10 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       details = MetadataDetails(
         threadId = Some("5c18eb166f0000110204b160"),
         enquiryType = Some("P800"),
-        adviser = Some(Adviser("adviser-id")))
+        adviser = Some(Adviser("adviser-id"))
+      ),
+      None,
+      Some("08 May 2019")
     )
 
     "return 201 (Created) when a message is successfully created by the message service" in {
@@ -133,7 +136,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           HttpResponse(Http.Status.CREATED, Some(Json.parse("{\"id\":\"5c18eb2e6f0000100204b161\"}")))))
 
       val messageResult =
-        await(messageService.postAdvisorReply(TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
+        await(messageService.postAdviserReply(TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
       messageResult.header.status shouldBe 201
     }
 
@@ -152,7 +155,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         .thenReturn(Future.successful(postMessageResponse))
 
       val messageResult =
-        await(messageService.postAdvisorReply(TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
+        await(messageService.postAdviserReply(TwoWayMessageReply("Some content"), "some-reply-to-message-id"))
       messageResult.header.status shouldBe 502
       messageResult.body.asInstanceOf[Strict].data.utf8String shouldBe
         "{\"error\":409,\"message\":\"POST of 'http://localhost:8910/messages' returned 409. Response body: '{\\\"reason\\\":\\\"Duplicated message content or external reference ID\\\"}'\"}"
@@ -191,7 +194,11 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       details = MetadataDetails(
         threadId = Some("5c18eb166f0000110204b160"),
         enquiryType = Some("p800"),
-        adviser = Some(Adviser("adviser-id")))
+        adviser = Some(Adviser("adviser-id"))
+      ),
+      None,
+      Some("08 May 2019")
+
     )
 
     "return 201 (Created) when a message is successfully created by the message service" in {
@@ -297,11 +304,11 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       val actual = messageService.createJsonForMessage("123412342314", originalMessage, nino, "p800", name)
     }
 
-    "be correct for a two-way message replied to by an advisor" in {
+    "be correct for a two-way message replied to by an adviser" in {
       val expected = Message(
         ExternalRef("some-random-id", "2WSM"),
         Recipient(TaxIdentifier("nino", "AB123456C"), "email@test.com"),
-        MessageType.Advisor,
+        MessageType.Adviser,
         "QUESTION",
         "some base64-encoded-html",
         Details(
@@ -319,11 +326,14 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         MetadataDetails(
           threadId = Some("thread-id"),
           enquiryType = Some("P800"),
-          adviser = Some(Adviser(pidId = "adviser-id")))
+          adviser = Some(Adviser(pidId = "adviser-id"))
+        ),
+        None,
+        Some("08 May 2019")
       )
 
       val reply = TwoWayMessageReply("some base64-encoded-html")
-      val actual = messageService.createJsonForReply("some-random-id", MessageType.Advisor, FormId.Reply, metadata, reply, "reply-to-id")
+      val actual = messageService.createJsonForReply("some-random-id", MessageType.Adviser, FormId.Reply, metadata, reply, "reply-to-id")
       assert(actual.equals(expected))
     }
 

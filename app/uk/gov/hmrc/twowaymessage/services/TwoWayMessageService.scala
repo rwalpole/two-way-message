@@ -45,7 +45,7 @@ trait TwoWayMessageService {
 
   def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata, name: Name)(implicit hc: HeaderCarrier): Future[Result]
 
-  def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
+  def postAdviserReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
 
   def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
 

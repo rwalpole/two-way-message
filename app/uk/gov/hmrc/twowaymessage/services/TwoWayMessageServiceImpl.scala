@@ -70,9 +70,9 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
     } recover handleError
   }
 
-  override def postAdvisorReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(
+  override def postAdviserReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(
     implicit hc: HeaderCarrier): Future[Result] =
-    postReply(twoWayMessageReply, replyTo, MessageType.Advisor, FormId.Reply)
+    postReply(twoWayMessageReply, replyTo, MessageType.Adviser, FormId.Reply)
 
   override def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result] =
     (for {

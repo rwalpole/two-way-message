@@ -46,8 +46,6 @@ class TwoWayMessageController @Inject()(
   val gformConnector: GformConnector)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
 
-  private val logger = Logger(this.getClass)
-
   // Customer creating a two-way message
   def createMessage(queueId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
@@ -83,6 +81,14 @@ class TwoWayMessageController @Inject()(
     }
   }
 
+  def getMessagesListSizeBy(messagesId: String): Action[AnyContent] = Action.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+    twms.findMessagesBy(messagesId).map {
+      case Left(messages) => Ok(JsNumber(messages.size))
+      case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
+    }
+  }
+
   def handleError(): PartialFunction[Throwable, Result] = {
     case _: NoActiveSession =>
       Logger.debug("Request did not have an Active Session, returning Unauthorised - Unauthenticated Error")
@@ -101,37 +107,36 @@ class TwoWayMessageController @Inject()(
     requestBody.validate[TwoWayMessage] match {
       case _: JsSuccess[_] =>
         Enquiry(queueId) match {
-          case Some(enquiryId) => {
+          case Some(enquiryId) =>
             val dmsMetaData = DmsMetadata(enquiryId.dmsFormId, nino.nino, enquiryId.classificationType, enquiryId.businessArea)
             twms.post(queueId, nino, requestBody.as[TwoWayMessage], dmsMetaData, name)
-          }
           case None => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> s"Invalid EnquityId: $queueId")))
         }
 
       case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
     }
 
-  // Advisor replying to a customer message
-  def createAdvisorResponse(replyTo: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  // Adviser replying to a customer message
+  def createAdviserResponse(replyTo: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     {
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
       authorised(AuthProviders(PrivilegedApplication)) {
-        validateAndPostAdvisorResponse(request.body, replyTo)
+        validateAndPostAdviserResponse(request.body, replyTo)
       }.recoverWith {
         case _ => Future.successful(Forbidden)
       }
     }
   }
 
-  // Validates the advisor response payload and then posts the reply
-  def validateAndPostAdvisorResponse(requestBody: JsValue, replyTo: String)(
+  // Validates the adviser response payload and then posts the reply
+  def validateAndPostAdviserResponse(requestBody: JsValue, replyTo: String)(
     implicit hc: HeaderCarrier): Future[Result] =
     requestBody.validate[TwoWayMessageReply] match {
-      case _: JsSuccess[_] => twms.postAdvisorReply(requestBody.as[TwoWayMessageReply], replyTo)
+      case _: JsSuccess[_] => twms.postAdviserReply(requestBody.as[TwoWayMessageReply], replyTo)
       case e: JsError      => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
     }
 
-  // Customer replying to an advisor's message
+  // Customer replying to an adviser's message
   def createCustomerResponse(queueId: String, replyTo: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)

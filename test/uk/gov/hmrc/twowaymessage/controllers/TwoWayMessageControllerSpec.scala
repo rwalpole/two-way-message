@@ -88,15 +88,15 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       result.header.status shouldBe Status.CREATED
     }
 
-    "return 201 (Created) when an advisor reply is successfully created in the message service " in {
-      when(mockMessageService.postAdvisorReply(any[TwoWayMessageReply], any[String])(any[HeaderCarrier]))
+    "return 201 (Created) when an adviser reply is successfully created in the message service " in {
+      when(mockMessageService.postAdviserReply(any[TwoWayMessageReply], any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
-      val result = await(controller.validateAndPostAdvisorResponse(twoWayMessageReplyGood, "replyToId"))
+      val result = await(controller.validateAndPostAdviserResponse(twoWayMessageReplyGood, "replyToId"))
       result.header.status shouldBe Status.CREATED
     }
 
-    "return 400 (Bad Request) if the advisor reply body is not as per the definition " in {
-      val result = await(controller.validateAndPostAdvisorResponse(twoWayMessageBadContent, "replyToId"))
+    "return 400 (Bad Request) if the adviser reply body is not as per the definition " in {
+      val result = await(controller.validateAndPostAdviserResponse(twoWayMessageBadContent, "replyToId"))
       result.header.status shouldBe Status.BAD_REQUEST
     }
 
@@ -113,7 +113,7 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
     }
 
     "return 200 (Ok) when metadata for a valid message id is requested correctly" in {
-      val dummyMetadata = MessageMetadata("123", TaxEntity("abc", TaxIdWithName("a","b")), "subject", MetadataDetails(None,None,None))
+      val dummyMetadata = MessageMetadata("123", TaxEntity("abc", TaxIdWithName("a","b")), "subject", MetadataDetails(None,None,None),None,Some("08 May 2019"))
       when(mockMessageService.getMessageMetadata(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Some(dummyMetadata)))
       val result = await(controller.getRecipientMetadata("123")(FakeRequest()))
       result.header.status shouldBe Status.OK

@@ -84,9 +84,9 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
     }
   }
 
-  "Advisor responding" should {
+  "Adviser responding" should {
 
-    "Forbidden when no access token" in {
+    "Unauthorised when no access token" in {
       val message = MessageUtil.buildValidReplyMessage()
       val validMessageId = getValidNinoMessageId()
 
@@ -95,10 +95,10 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
         .post(message)
         .futureValue
 
-      response.status shouldBe 403
+      response.status shouldBe 404
     }
 
-    "Forbidden when using user access token" in {
+    "Unauthorised when using user access token" in {
       val message = MessageUtil.buildValidReplyMessage()
       val validMessageId = getValidNinoMessageId()
 
@@ -108,7 +108,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
         .post(message)
         .futureValue
 
-      response.status shouldBe 403
+      response.status shouldBe 404
     }
 
     "Access when access token" in {
@@ -116,7 +116,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val validMessageId = getValidNinoMessageId()
 
       val response = httpClient
-        .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+        .url(resource(s"/two-way-message/message/adviser/$validMessageId/reply"))
         .withHttpHeaders(AuthUtil.buildStrideToken())
         .post(message)
         .futureValue
@@ -125,7 +125,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
     }
   }
 
-  "User responding to an advisor's message" should {
+  "User responding to an adviser's message" should {
 
     "return Created (201) when valid bearer token with Nino credentials and valid JSON payload" in {
       val message = MessageUtil.buildValidReplyMessage()

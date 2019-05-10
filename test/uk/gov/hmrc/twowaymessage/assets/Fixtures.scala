@@ -24,7 +24,7 @@ trait Fixtures {
   val testMessage = Message(
     ExternalRef("some-random-id", "2WSM"),
     Recipient(TaxIdentifier("nino", "AB123456C"), "email@test.com"),
-    MessageType.Advisor,
+    MessageType.Adviser,
     "QUESTION",
     "some base64-encoded-html",
     Details(
@@ -39,7 +39,7 @@ trait Fixtures {
     subject = "test subject",
     body = Some(
       ConversationItemDetails(
-      `type` = MessageType.Advisor,
+      `type` = MessageType.Adviser,
       form = FormId.Reply,
       issueDate = Some(LocalDate.now),
       replyTo = Some("reply-to-id"),

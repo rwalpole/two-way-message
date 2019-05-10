@@ -70,7 +70,7 @@ object MessageType extends Enumeration {
 
   type MessageType = Value
 
-  val Advisor = Value("2wsm-advisor")
+  val Adviser = Value("2wsm-advisor")
   val Customer = Value("2wsm-customer")
 }
 

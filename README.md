@@ -49,11 +49,11 @@ In the case where the error is being bubbled up from the message service, for in
 }
 ```
 
-## Advisor reply message API
+## Adviser reply message API
 
 | Path | Supported Methods | Description
 |---|---|---
-|`/message/advsior/:replyTo/reply`|POST|Reply to a customer two way message (as an advisor)
+|`/message/adviser/:replyTo/reply`|POST|Reply to a customer two way message (as an adviser)
 
 Example JSON body in POST request:
 ```
@@ -106,7 +106,7 @@ Or attempting to reply to a non-existing message:
 
 | Path | Supported Methods | Description
 |---|---|---
-|`/message/customer/:queueId/:replyTo/reply`|POST|Reply to an advisor's two way message (as a customer)
+|`/message/customer/:queueId/:replyTo/reply`|POST|Reply to an adviser's two way message (as a customer)
 
 Example JSON body in POST request:
 ```
