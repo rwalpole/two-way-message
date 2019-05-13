@@ -91,7 +91,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val validMessageId = getValidNinoMessageId()
 
       val response = httpClient
-        .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+        .url(resource(s"/two-way-message/message/adviser/$validMessageId/reply"))
         .post(message)
         .futureValue
 
@@ -103,7 +103,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
       val validMessageId = getValidNinoMessageId()
 
       val response = httpClient
-        .url(resource(s"/two-way-message/message/advisor/$validMessageId/reply"))
+        .url(resource(s"/two-way-message/message/adviser/$validMessageId/reply"))
         .withHttpHeaders(AuthUtil.buildNinoUserToken())
         .post(message)
         .futureValue

@@ -2,8 +2,8 @@
 
 POST       /message/customer/:queueId/submit            uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createMessage(queueId)
 
-POST       /message/advisor/:replyTo/reply              uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createAdvisorResponse(replyTo)
-POST       /message/adviser/:replyTo/reply              uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createAdvisorResponse(replyTo)
+POST       /message/advisor/:replyTo/reply              uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createAdviserResponse(replyTo)
+POST       /message/adviser/:replyTo/reply              uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createAdviserResponse(replyTo)
 
 POST       /message/customer/:queueId/:replyTo/reply    uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createCustomerResponse(queueId, replyTo)
 
