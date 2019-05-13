@@ -67,7 +67,7 @@ trait TwoWayMessageService {
         )
       ),
       MessageType.Customer,
-      s"We will reply in $responseTime",
+      twoWayMessage.subject,
       twoWayMessage.content,
       Details(FormId.Question, None, None, enquiryType = Some(queueId), waitTime = Some(responseTime))
     )
