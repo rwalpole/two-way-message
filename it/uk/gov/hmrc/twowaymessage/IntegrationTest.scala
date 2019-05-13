@@ -86,7 +86,7 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
 
   "Adviser responding" should {
 
-    "Unauthorised when no access token" in {
+    "return Forbidden (403) when no access token" in {
       val message = MessageUtil.buildValidReplyMessage()
       val validMessageId = getValidNinoMessageId()
 
@@ -95,10 +95,10 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
         .post(message)
         .futureValue
 
-      response.status shouldBe 404
+      response.status shouldBe 403
     }
 
-    "Unauthorised when using user access token" in {
+    "return Forbidden (403) when using user access token" in {
       val message = MessageUtil.buildValidReplyMessage()
       val validMessageId = getValidNinoMessageId()
 
@@ -108,10 +108,10 @@ class IntegrationTest extends WordSpec with Matchers with ServiceSpec  {
         .post(message)
         .futureValue
 
-      response.status shouldBe 404
+      response.status shouldBe 403
     }
 
-    "Access when access token" in {
+    "return Access when access token" in {
       val message = MessageUtil.buildValidReplyMessage()
       val validMessageId = getValidNinoMessageId()
 
