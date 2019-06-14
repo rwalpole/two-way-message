@@ -17,10 +17,11 @@
 package uk.gov.hmrc.twowaymessage.controllers
 
 import javax.inject.{Inject, Singleton}
-
+import javax.swing.text.html.HTML
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
+import play.twirl.api.Html
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
@@ -34,16 +35,17 @@ import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
 import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
-import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
+import uk.gov.hmrc.twowaymessage.services.{HtmlCreatorService, TwoWayMessageService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 @Singleton
 class TwoWayMessageController @Inject()(
-  twms: TwoWayMessageService,
-  val authConnector: AuthConnector,
-  val gformConnector: GformConnector)(implicit ec: ExecutionContext)
+                                         twms: TwoWayMessageService,
+                                         hcs:  HtmlCreatorService,
+                                         val authConnector: AuthConnector,
+                                         val gformConnector: GformConnector)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
 
   // Customer creating a two-way message
@@ -77,6 +79,14 @@ class TwoWayMessageController @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     twms.findMessagesBy(messageId).map {
       case Left(messages) => Ok(Json.toJson(messages))
+      case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
+    }
+  }
+
+  def createConversation(latestMessageId: String): Action[AnyContent] = Action.async { implicit request =>
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+    twms.findMessagesBy(latestMessageId).map {
+      case Left(messages) => Ok(hcs.createConversation(latestMessageId,messages))
       case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
     }
   }

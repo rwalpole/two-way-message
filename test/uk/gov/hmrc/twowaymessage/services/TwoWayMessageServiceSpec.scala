@@ -17,6 +17,7 @@
 package uk.gov.hmrc.twowaymessage.services
 
 import com.codahale.metrics.SharedMetricRegistries
+import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.{Matchers, WordSpec}
@@ -283,6 +284,154 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     }
     SharedMetricRegistries.clear
   }
+
+  val JsonlistOfConversationItems = Json.parse("""[
+    {
+      "recipient": {
+      "regime": "paye",
+      "identifier": {
+      "name": "nino",
+      "value": "AB124567C"
+    },
+      "email": "matthew.groom@ntlworld.com"
+    },
+      "subject": "Matt Test 1",
+      "body": {
+      "form": "2WSM-question",
+      "type": "2wsm-customer",
+      "paperSent": false,
+      "issueDate": "2019-06-13",
+      "threadId": "5d021fbe5b0000200151779d",
+      "enquiryType": "p800"
+    },
+      "validFrom": "2019-06-13",
+      "alertFrom": "2019-06-13",
+      "alertDetails": {
+      "templateId": "newMessageAlert_2WSM-question",
+      "recipientName": {
+      "forename": "TestUser",
+      "line1": "TestUser"
+    },
+      "data": {
+      "email": "matthew.groom@ntlworld.com",
+      "date": "2019-06-13",
+      "subject": "Matt Test 1"
+    }
+    },
+      "alerts": {
+      "emailAddress": "matthew.groom@ntlworld.com",
+      "alertTime": {
+      "$date": 1560420498616
+    },
+      "success": true
+    },
+      "readTime": {
+      "$date": 1560420286463
+    },
+      "status": "succeeded",
+      "lastUpdated": {
+      "$date": 1560420497651
+    },
+      "hash": "PAwWcHy4yKLrMx27OfRxyVnj9NY5/k4uRDvEbNBLpPA=",
+      "statutory": false,
+      "renderUrl": {
+      "service": "message",
+      "url": "/messages/5d021fbe5b0000200151779c/content"
+    },
+      "externalRef": {
+      "id": "954e21ce-55de-45b3-8d0d-a897e7a17ec4",
+      "source": "2WSM"
+    },
+      "content": "SGVsbG8sIG15IGZyaWVuZCE=",
+      "_id": {
+      "$oid": "5d021fbe5b0000200151779c"
+    }
+    },
+    {
+      "recipient": {
+      "regime": "paye",
+      "identifier": {
+      "name": "nino",
+      "value": "AB124567C"
+    },
+      "email": "matthew.groom@ntlworld.com"
+    },
+      "subject": "Matt Test 1",
+      "body": {
+      "form": "2WSM-reply",
+      "type": "2wsm-advisor",
+      "paperSent": false,
+      "issueDate": "2019-06-13",
+      "replyTo": "5d021fbe5b0000200151779c",
+      "threadId": "5d021fbe5b0000200151779d",
+      "enquiryType": "p800",
+      "adviser": {
+      "pidId": "123"
+    }
+    },
+      "validFrom": "2019-06-13",
+      "alertFrom": "2019-06-13",
+      "alertDetails": {
+      "templateId": "newMessageAlert_2WSM-reply",
+      "recipientName": {
+      "forename": "TestUser",
+      "line1": "TestUser"
+    },
+      "data": {
+      "email": "matthew.groom@ntlworld.com",
+      "date": "2019-06-13",
+      "subject": "Matt Test 1"
+    }
+    },
+      "alerts": {
+      "emailAddress": "matthew.groom@ntlworld.com",
+      "alertTime": {
+      "$date": 1560420498677
+    },
+      "success": true
+    },
+      "status": "succeeded",
+      "lastUpdated": {
+      "$date": 1560420498619
+    },
+      "hash": "n81BiQFbRwSFQ0b9rcthzPihVHpQ/wew1G8flshXeRM=",
+      "statutory": false,
+      "renderUrl": {
+      "service": "message",
+      "url": "/messages/5d02201b5b0000360151779e/content"
+    },
+      "externalRef": {
+      "id": "5a3e51c6-f657-48dc-a132-2e72151a8e6c",
+      "source": "2WSM"
+    },
+      "content": "RGVhciBUZXN0VXNlciBUaGFuayB5b3UgZm9yIHlvdXIgbWVzc2FnZSBvZiAxMyBKdW5lIDIwMTkuPC9icj5UbyByZWNhcCB5b3VyIHF1ZXN0aW9uLCBJIHRoaW5rIHlvdSdyZSBhc2tpbmcgZm9yIGhlbHAgd2l0aDwvYnI+SSBiZWxpZXZlIHRoaXMgYW5zd2VycyB5b3VyIHF1ZXN0aW9uIGFuZCBob3BlIHlvdSBhcmUgc2F0aXNmaWVkIHdpdGggdGhlIHJlc3BvbnNlLiBUaGVyZSdzIG5vIG5lZWQgdG8gc2VuZCBhIHJlcGx5LiBCdXQgaWYgeW91IHRoaW5rIHRoZXJlJ3Mgc29tZXRoaW5nIGltcG9ydGFudCBtaXNzaW5nLCBqdXN0IGFzayBhbm90aGVyIHF1ZXN0aW9uIGFib3V0IHRoaXMgYmVsb3cuPC9icj5SZWdhcmRzPC9icj5NYXR0aGV3IEdyb29tPC9icj5uSE1SQyBkaWdpdGFsIHRlYW0u",
+      "_id": {
+      "$oid": "5d02201b5b0000360151779e"
+    }
+    }
+    ]""")
+
+  "TwoWayMessageService.findMessagesListBy1" should {
+
+    "bla bla" in {
+      when(
+        mockMessageConnector
+          .getMessages(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(
+          HttpResponse(Http.Status.OK, Some(JsonlistOfConversationItems))))
+      val messagesResult = await(messageService.findMessagesBy("5d021fbe5b0000200151779d"))
+      messagesResult.left.get.toString should be(listOfConversationItems.toString)
+    }
+
+  }
+
+  val listOfConversationItems = List(
+    ConversationItem("5d021fbe5b0000200151779c","Matt Test 1",Some(
+      ConversationItemDetails(MessageType.Customer,FormId.Question,Some(LocalDate.parse("2019-06-13")),None,Some("p800"),None)),LocalDate.parse("2019-06-13"),Some("SGVsbG8sIG15IGZyaWVuZCE=")),
+    ConversationItem("5d02201b5b0000360151779e","Matt Test 1",Some(
+      ConversationItemDetails(MessageType.Adviser,FormId.Reply,Some(LocalDate.parse("2019-06-13")),Some("5d021fbe5b0000200151779c"),Some("p800"),Some(Adviser("123")))),LocalDate.parse("2019-06-13"),Some("RGVhciBUZXN0VXNlciBUaGFuayB5b3UgZm9yIHlvdXIgbWVzc2FnZSBvZiAxMyBKdW5lIDIwMTkuPC9icj5UbyByZWNhcCB5b3VyIHF1ZXN0aW9uLCBJIHRoaW5rIHlvdSdyZSBhc2tpbmcgZm9yIGhlbHAgd2l0aDwvYnI+SSBiZWxpZXZlIHRoaXMgYW5zd2VycyB5b3VyIHF1ZXN0aW9uIGFuZCBob3BlIHlvdSBhcmUgc2F0aXNmaWVkIHdpdGggdGhlIHJlc3BvbnNlLiBUaGVyZSdzIG5vIG5lZWQgdG8gc2VuZCBhIHJlcGx5LiBCdXQgaWYgeW91IHRoa" +
+    "W5rIHRoZXJlJ3Mgc29tZXRoaW5nIGltcG9ydGFudCBtaXNzaW5nLCBqdXN0IGFzayBhbm90aGVyIHF1ZXN0aW9uIGFib3V0IHRoaXMgYmVsb3cuPC9icj5SZWdhcmRzPC9icj5NYXR0aGV3IEdyb29tPC9icj5uSE1SQyBkaWdpdGFsIHRlYW0u"
+  )))
 
   "Generated JSON" should {
 

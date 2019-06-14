@@ -115,6 +115,7 @@ case class ConversationItemDetails(
   adviser: Option[Adviser] = None)
 
 case class ConversationItem (
+  id: String,
   subject: String,
   body: Option[ConversationItemDetails],
   validFrom: LocalDate,
