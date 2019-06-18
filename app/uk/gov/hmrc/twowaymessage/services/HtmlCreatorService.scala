@@ -29,31 +29,33 @@ class HtmlCreatorService @Inject()(twoWayMessageService: TwoWayMessageService)
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  def createConversation(latestMessageId: String, messages: List[ConversationItem]): String = {
+  def createConversation(latestMessageId: String, messages: List[ConversationItem]) : String = {
     createConversationList(sortConversation(latestMessageId, messages)).mkString
   }
 
   def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem] = {
 
-    def sortConversation(messageId: String, messages: List[ConversationItem], orderedMsgList: List[ConversationItem]): List[ConversationItem] = {
+    def sortConversation(messageId: String, messages: List[ConversationItem], orderedMsgList: List[ConversationItem]):
+    List[ConversationItem] = {
       val message = messages.find(message => message.id == messageId).get
       message.body.flatMap(_.replyTo) match {
         case None => orderedMsgList :+ message
         case Some(replyToId) => sortConversation(replyToId, messages, orderedMsgList :+ message)
       }
     }
-
     sortConversation(latestMessageId, messages, List())
   }
 
-  def createConversationList(messages: List[ConversationItem]): List[String] = {
-    format2wsmMessageContent(messages.head, true)
-    for {
+  private def createConversationList(messages: List[ConversationItem]): List[String] = {
+    val latestMessage = format2wsmMessageContent(messages.head,true)
+    val restOfList= for {
       msg <- messages.tail
     } yield format2wsmMessageContent(msg, false)
+    val listOfMessage = restOfList :+ latestMessage
+    listOfMessage.reverse
   }
 
-    def format2wsmMessageContent(conversationItem: ConversationItem, isLatestMessage: Boolean): String = {
+    private def format2wsmMessageContent(conversationItem: ConversationItem, isLatestMessage: Boolean): String = {
       val headingClass = "govuk-heading-xl margin-top-small margin-bottom-small"
       val header = if (isLatestMessage) {
         <h1 class={headingClass}>
@@ -71,7 +73,7 @@ class HtmlCreatorService @Inject()(twoWayMessageService: TwoWayMessageService)
         val formActionUrl = s"/two-way-message-frontend/message/customer/$enquiryType/" + conversationItem.id + "/reply"
         conversationItem.body.map(_.`type`) match {
           case Some(msgType) => msgType match {
-            case MessageType.Adviser => s""" <a href="#reply-input-label">Send another message about this</a> """
+            case MessageType.Adviser => s""" <a href="${formActionUrl}#reply-input-label">Send another message about this</a> """
             case _ => ""
           }
         }
@@ -90,7 +92,7 @@ class HtmlCreatorService @Inject()(twoWayMessageService: TwoWayMessageService)
       xml.mkString
     }
 
-    def getDateText(message: ConversationItem): String = {
+    private def getDateText(message: ConversationItem): String = {
       val messageDate = extractMessageDate(message)
       message.body match {
         case Some(conversationItemDetails) => conversationItemDetails.`type` match {
@@ -106,7 +108,7 @@ class HtmlCreatorService @Inject()(twoWayMessageService: TwoWayMessageService)
     private def defaultDateText(dateStr: String) = s"This message was sent on $dateStr"
 
 
-    def extractMessageDate(message: ConversationItem): String = {
+    private def extractMessageDate(message: ConversationItem): String = {
       message.body.flatMap(_.issueDate) match {
         case Some(issueDate) => formatter(issueDate)
         case None => formatter(message.validFrom)
@@ -115,5 +117,5 @@ class HtmlCreatorService @Inject()(twoWayMessageService: TwoWayMessageService)
 
     val dateFormatter = DateTimeFormat.forPattern("dd MMMM yyyy")
 
-    def formatter(date: LocalDate): String = date.toString(dateFormatter)
+    private def formatter(date: LocalDate): String = date.toString(dateFormatter)
 }

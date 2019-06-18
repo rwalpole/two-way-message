@@ -36,6 +36,7 @@ trait Fixtures {
   )
 
   val testConversationItem = ConversationItem(
+    id = "",
     subject = "test subject",
     body = Some(
       ConversationItemDetails(
