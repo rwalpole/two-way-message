@@ -19,7 +19,7 @@ package uk.gov.hmrc.twowaymessage.services
 import com.codahale.metrics.SharedMetricRegistries
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{ Matchers, WordSpec }
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.HttpEntity.Strict
@@ -31,7 +31,7 @@ import play.mvc.Http
 import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.twowaymessage.assets.Fixtures
@@ -39,7 +39,7 @@ import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with Fixtures with MockitoSugar {
 
@@ -198,7 +198,6 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       ),
       None,
       Some("08 May 2019")
-
     )
 
     "return 201 (Created) when a message is successfully created by the message service" in {
@@ -265,21 +264,19 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       when(
         mockMessageConnector
           .getMessages(any[String])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(
-          HttpResponse(Http.Status.OK, Some(Json.parse(fixtureMessages)))))
+        .thenReturn(Future.successful(HttpResponse(Http.Status.OK, Some(Json.parse(fixtureMessages)))))
       val messagesResult = await(messageService.findMessagesBy("1234567890"))
       messagesResult.left.get.head.validFrom.toString should be("2013-12-01")
     }
 
     val invalidFixtureMessages = "{}"
     "return error if invalid message list json" in {
-        when(
-            mockMessageConnector
-                .getMessages(any[String])(any[HeaderCarrier]))
-            .thenReturn(Future.successful(
-                HttpResponse(Http.Status.OK, Some(Json.parse(invalidFixtureMessages)))))
-        val messagesResult = await(messageService.findMessagesBy("1234567890"))
-        messagesResult.right should not be(None)
+      when(
+        mockMessageConnector
+          .getMessages(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(HttpResponse(Http.Status.OK, Some(Json.parse(invalidFixtureMessages)))))
+      val messagesResult = await(messageService.findMessagesBy("1234567890"))
+      messagesResult.right should not be (None)
     }
     SharedMetricRegistries.clear
   }
@@ -287,7 +284,8 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
   "Generated JSON" should {
 
     "be correct for a two-way message posted by a customer" in {
-      val taxpayerName = TaxpayerName(forename = Option("firstname"), surname = Option("surname"), line1 = Option("firstname surname"))
+      val taxpayerName =
+        TaxpayerName(forename = Option("firstname"), surname = Option("surname"), line1 = Option("firstname surname"))
       val expected =
         Message(
           ExternalRef("123412342314", "2WSM"),
@@ -295,7 +293,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
           MessageType.Customer,
           "QUESTION",
           "some base64-encoded-html",
-          Details(FormId.Question, None, None, enquiryType = Some("p800"))
+          Details(FormId.Question, None, None, enquiryType = Some("p800"), waitTime = Some("7 days"))
         )
 
       val originalMessage = TwoWayMessage(ContactDetails("email@test.com"), "QUESTION", "some base64-encoded-html")
@@ -311,12 +309,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
         MessageType.Adviser,
         "QUESTION",
         "some base64-encoded-html",
-        Details(
-          FormId.Reply,
-          Some("reply-to-id"),
-          Some("thread-id"),
-          Some("P800"),
-          Some(Adviser(pidId = "adviser-id")))
+        Details(FormId.Reply, Some("reply-to-id"), Some("thread-id"), Some("P800"), Some(Adviser(pidId = "adviser-id")))
       )
 
       val metadata = MessageMetadata(
@@ -333,7 +326,8 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       )
 
       val reply = TwoWayMessageReply("some base64-encoded-html")
-      val actual = messageService.createJsonForReply("some-random-id", MessageType.Adviser, FormId.Reply, metadata, reply, "reply-to-id")
+      val actual = messageService
+        .createJsonForReply(None, "some-random-id", MessageType.Adviser, FormId.Reply, metadata, reply, "reply-to-id")
       assert(actual.equals(expected))
     }
 
@@ -390,7 +384,9 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       )
       val expectedHtml =
         <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
-      val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
+      val actualHtml = await(
+        messageService
+          .createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
       /* The following can only be used for local testing of PDF generation as wkhtmltopdf is not available on the build server */
       //PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
       assert(actualHtml.get.contains(expectedHtml))
@@ -401,7 +397,9 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
         Future.successful(HttpResponse(Http.Status.BAD_GATEWAY))
       )
-      val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
+      val actualHtml = await(
+        messageService
+          .createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
       actualHtml shouldBe None
     }
   }
