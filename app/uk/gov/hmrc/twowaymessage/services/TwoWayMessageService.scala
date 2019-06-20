@@ -37,25 +37,35 @@ import scala.language.implicitConversions
 @ImplementedBy(classOf[TwoWayMessageServiceImpl])
 trait TwoWayMessageService {
 
-  type ErrorFunction = (Int,String) => Result
+  type ErrorFunction = (Int, String) => Result
 
   val errorResponse: ErrorFunction = (status: Int, message: String) => BadGateway(Json.toJson(Error(status, message)))
 
   def getMessageMetadata(messageId: String)(implicit hc: HeaderCarrier): Future[Option[MessageMetadata]]
 
-  def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata, name: Name)(implicit hc: HeaderCarrier): Future[Result]
+  def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata, name: Name)(
+    implicit hc: HeaderCarrier): Future[Result]
 
-  def postAdviserReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
+  def postAdviserReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(
+    implicit hc: HeaderCarrier): Future[Result]
 
-  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result]
+  def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(
+    implicit hc: HeaderCarrier): Future[Result]
 
-  def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result]
+  def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)(
+    implicit hc: HeaderCarrier): Future[Result]
 
-  def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String)(implicit hc: HeaderCarrier): Future[Option[String]]
+  def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String)(
+    implicit hc: HeaderCarrier): Future[Option[String]]
 
   def getMessageContentBy(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]]
 
-  def createJsonForMessage(refId: String, twoWayMessage: TwoWayMessage, nino: Nino, queueId: String, name: Name): Message = {
+  def createJsonForMessage(
+    refId: String,
+    twoWayMessage: TwoWayMessage,
+    nino: Nino,
+    queueId: String,
+    name: Name): Message = {
     val responseTime = Enquiry(queueId).get.responseTime
     Message(
       ExternalRef(refId, "2WSM"),
@@ -73,8 +83,14 @@ trait TwoWayMessageService {
     )
   }
 
-  def createJsonForReply(refId: String, messageType: MessageType, formId: FormId, metadata: MessageMetadata,
-                         reply: TwoWayMessageReply, replyTo: String): Message =
+  def createJsonForReply(
+    queueId: Option[String],
+    refId: String,
+    messageType: MessageType,
+    formId: FormId,
+    metadata: MessageMetadata,
+    reply: TwoWayMessageReply,
+    replyTo: String): Message =
     Message(
       ExternalRef(refId, "2WSM"),
       Recipient(
@@ -85,7 +101,14 @@ trait TwoWayMessageService {
       messageType,
       metadata.subject,
       reply.content,
-      Details(formId, Some(replyTo), metadata.details.threadId, metadata.details.enquiryType, metadata.details.adviser)
+      Details(
+        formId,
+        Some(replyTo),
+        metadata.details.threadId,
+        metadata.details.enquiryType,
+        metadata.details.adviser,
+        waitTime = queueId.map(qId => Enquiry(qId).get.responseTime)
+      )
     )
 
   def encodeToBase64String(text: String): String =
@@ -93,12 +116,11 @@ trait TwoWayMessageService {
 
   def findMessagesBy(messageId: String)(implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]]
 
-  protected def getContent(response: HttpResponse): Option[String] = {
+  protected def getContent(response: HttpResponse): Option[String] =
     response.status match {
       case OK => Some(response.body)
-      case _ => None
+      case _  => None
     }
-  }
 
   protected def handleResponse(response: HttpResponse): Result = response.status match {
     case CREATED => Created(Json.parse(response.body))
@@ -113,8 +135,8 @@ trait TwoWayMessageService {
 
   def deriveAddressedName(name: Name): Option[String] = (name.name, name.lastName) match {
     case (Some(n), Some(l)) => Some(s"$n $l")
-    case (Some(n), None) => Some(n)
-    case _ => None
+    case (Some(n), None)    => Some(n)
+    case _                  => None
   }
 
 }

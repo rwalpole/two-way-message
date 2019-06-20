@@ -45,7 +45,8 @@ import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAppPerSuite with Fixtures with MockitoSugar {
+class TwoWayMessageControllerSpec
+    extends WordSpec with Matchers with GuiceOneAppPerSuite with Fixtures with MockitoSugar {
 
   val mockMessageService = mock[TwoWayMessageService]
 
@@ -81,8 +82,10 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
     "return 201 (Created) when a message is successfully created in the message service " in {
       val nino = Nino("AB123456C")
       val name = Name(Option("Firstname"), Option("Surname"))
-      when(mockMessageService.post(anyString, org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage],any[DmsMetadata], any[Name])(
-        any[HeaderCarrier]))
+      when(
+        mockMessageService
+          .post(anyString, org.mockito.ArgumentMatchers.eq(nino), any[TwoWayMessage], any[DmsMetadata], any[Name])(
+            any[HeaderCarrier]))
         .thenReturn(Future.successful(Created(Json.toJson("id" -> UUID.randomUUID().toString))))
       val result = await(controller.validateAndPostMessage("p800", nino, twoWayMessageGood, name))
       result.header.status shouldBe Status.CREATED
@@ -113,8 +116,15 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
     }
 
     "return 200 (Ok) when metadata for a valid message id is requested correctly" in {
-      val dummyMetadata = MessageMetadata("123", TaxEntity("abc", TaxIdWithName("a","b")), "subject", MetadataDetails(None,None,None),None,Some("08 May 2019"))
-      when(mockMessageService.getMessageMetadata(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Some(dummyMetadata)))
+      val dummyMetadata = MessageMetadata(
+        "123",
+        TaxEntity("abc", TaxIdWithName("a", "b")),
+        "subject",
+        MetadataDetails(None, None, None),
+        None,
+        Some("08 May 2019"))
+      when(mockMessageService.getMessageMetadata(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some(dummyMetadata)))
       val result = await(controller.getRecipientMetadata("123")(FakeRequest()))
       result.header.status shouldBe Status.OK
     }
@@ -128,7 +138,8 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
 
     "return 200 (Ok) when message content for a valid message id is requested correctly" in {
       val dummyContent = "dummy content"
-      when(mockMessageService.getMessageContentBy(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Some(dummyContent)))
+      when(mockMessageService.getMessageContentBy(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Some(dummyContent)))
       val result = await(controller.getRecipientMessageContentBy("123")(FakeRequest()))
       result.header.status shouldBe Status.OK
     }
@@ -140,7 +151,8 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
     }
 
     "return 200 (Ok) when messages are  requested correctly" in {
-      when(mockMessageService.findMessagesBy(any[String])(any[HeaderCarrier])).thenReturn(Future.successful(Left(List(testConversationItem, testConversationItem))))
+      when(mockMessageService.findMessagesBy(any[String])(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Left(List(testConversationItem, testConversationItem))))
       val result = await(controller.getMessagesListBy("123")(FakeRequest()))
       result.header.status shouldBe Status.OK
     }
@@ -159,7 +171,7 @@ class TwoWayMessageControllerSpec extends WordSpec with Matchers with GuiceOneAp
       val result = await(controller.getCurrentResponseTime("IP4U")(FakeRequest()))
       result.header.status shouldBe 404
     }
-    
+
     SharedMetricRegistries.clear
   }
 

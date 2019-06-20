@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.twowaymessage.controllers
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
-import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
+import uk.gov.hmrc.auth.core.retrieve.{ Name, Retrievals, ~ }
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
 import uk.gov.hmrc.gform.gformbackend.GformConnector
@@ -36,7 +36,7 @@ import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 @Singleton
@@ -61,7 +61,7 @@ class TwoWayMessageController @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     twms.getMessageMetadata(messageId).map {
       case Some(m) => Ok(Json.toJson(m))
-      case None => NotFound
+      case None    => NotFound
     }
   }
 
@@ -69,7 +69,7 @@ class TwoWayMessageController @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     twms.getMessageContentBy(messageId).map {
       case Some(m) => Ok(m)
-      case None => NotFound
+      case None    => NotFound
     }
   }
 
@@ -77,7 +77,7 @@ class TwoWayMessageController @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     twms.findMessagesBy(messageId).map {
       case Left(messages) => Ok(Json.toJson(messages))
-      case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
+      case Right(errors)  => BadRequest(Json.obj("error" -> 400, "message" -> errors))
     }
   }
 
@@ -85,7 +85,7 @@ class TwoWayMessageController @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     twms.findMessagesBy(messagesId).map {
       case Left(messages) => Ok(JsNumber(messages.size))
-      case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
+      case Right(errors)  => BadRequest(Json.obj("error" -> 400, "message" -> errors))
     }
   }
 
@@ -108,9 +108,11 @@ class TwoWayMessageController @Inject()(
       case _: JsSuccess[_] =>
         Enquiry(queueId) match {
           case Some(enquiryId) =>
-            val dmsMetaData = DmsMetadata(enquiryId.dmsFormId, nino.nino, enquiryId.classificationType, enquiryId.businessArea)
+            val dmsMetaData =
+              DmsMetadata(enquiryId.dmsFormId, nino.nino, enquiryId.classificationType, enquiryId.businessArea)
             twms.post(queueId, nino, requestBody.as[TwoWayMessage], dmsMetaData, name)
-          case None => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> s"Invalid EnquityId: $queueId")))
+          case None =>
+            Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> s"Invalid EnquityId: $queueId")))
         }
 
       case e: JsError => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
@@ -137,11 +139,12 @@ class TwoWayMessageController @Inject()(
     }
 
   // Customer replying to an adviser's message
+  // TODO: queueId is redundant, as it's currently fetched from the original message metadata (i.e. postCustomerReply/getMessageMetadata) - you can safely remove
   def createCustomerResponse(queueId: String, replyTo: String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
       authorised(Enrolment("HMRC-NI")) {
-          validateAndPostCustomerResponse(request.body, replyTo)
+        validateAndPostCustomerResponse(request.body, replyTo)
       } recover handleError
   }
 
@@ -153,11 +156,10 @@ class TwoWayMessageController @Inject()(
       case e: JsError      => Future.successful(BadRequest(Json.obj("error" -> 400, "message" -> JsError.toJson(e))))
     }
 
-
   def getCurrentResponseTime(formType: String): Action[AnyContent] = Action.async { implicit request =>
     Enquiry(formType) match {
       case Some(form) => Future.successful(Ok(Json.obj("responseTime" -> form.responseTime)))
-      case _ => Future.successful(NotFound)
+      case _          => Future.successful(NotFound)
     }
   }
 }
