@@ -164,7 +164,7 @@ class TwoWayMessageControllerSpec
 
     "return response time when response time is requested for valid enquiry type" in {
       val result = controller.getCurrentResponseTime("p800")(FakeRequest())
-      contentAsString(result) shouldEqual """{"responseTime":"7 days"}"""
+      contentAsString(result) shouldEqual """{"responseTime":"3 weeks"}"""
     }
 
     "return 404 when response time requested for invalid enquiry type" in {
