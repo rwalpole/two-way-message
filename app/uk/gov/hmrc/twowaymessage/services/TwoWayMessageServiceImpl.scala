@@ -43,8 +43,7 @@ import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Node
 
-class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gformConnector: GformConnector, servicesConfig: ServicesConfig)
-                                        (implicit ec: ExecutionContext) extends TwoWayMessageService {
+class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gformConnector: GformConnector, servicesConfig: ServicesConfig, htmlCreatorService: HtmlCreatorService)(implicit ec: ExecutionContext) extends TwoWayMessageService {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -93,18 +92,6 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
     }
   }
 
-  override def createHtmlMessage(messageId: String, nino: Nino, messageContent: String, subject: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
-    import XmlTransformService._
-    val frontendUrl: String = servicesConfig.getString("pdf-admin-prefix")
-    val url = s"$frontendUrl/message/$messageId/reply"
-    getMessageContent(messageId).flatMap {
-      case Some(content) =>
-        val htmlText = updateDatePara(stripH1(stripH2(content))).mkString
-        Future.successful(Some(uk.gov.hmrc.twowaymessage.views.html.two_way_message(url, nino.nino, subject, Html(htmlText)).body))
-      case None => Future.successful(None)
-    }
-  }
-
   override def findMessagesBy(messageId: String)(implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]] =
     messageConnector.getMessages(messageId).flatMap{
       response => response.json.validate[List[ConversationItem]].fold(
@@ -134,9 +121,9 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       case CREATED =>
         response.json.validate[Identifier].asOpt match {
           case Some(identifier) =>
-            createHtmlMessage(identifier.id, Nino(dmsMetaData.customerId), content, subject).flatMap {
-              case Some(html) => createDmsSubmission(html,response,dmsMetaData)
-              case _ => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, "Failed to create HTML for DMS submission"))
+            htmlCreatorService.getConversation(identifier.id, Advisor).flatMap {
+              case Left(html) => createDmsSubmission(html.toString,response,dmsMetaData)
+              case Right(error) => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, error))
             }
           case None => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference"))
         }

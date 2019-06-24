@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.twowaymessage.model
 
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.LocalDate
-import play.api.libs.json._
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.functional.syntax._
+import play.api.libs.json.{JodaReads, JodaWrites, Json, Reads, _}
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
-import play.api.libs.json.JodaReads
-import play.api.libs.json.JodaWrites
 
 object MessageFormat {
+
+  def decodeBase64String(input: String): String = {
+    new String(Base64.decodeBase64(input.getBytes("UTF-8")))
+  }
 
   implicit val taxpayerNameWrites: Format[TaxpayerName] = Json.format[TaxpayerName]
 
@@ -54,8 +58,24 @@ object MessageFormat {
 
   implicit val messageFormat: Format[Message] = Json.format[Message]
 
-  implicit val conversationItemFormat: Format[ConversationItem] = Json.format[ConversationItem]
+  implicit val conversationItemFormat: Writes[ConversationItem] = Json.writes[ConversationItem]
 
+  implicit val bsonObjectIdWrites: Format[BSONObjectID] = Json.format[BSONObjectID]
+
+  implicit val conversationItemReads: Reads[ConversationItem] = (
+    (__ \ "_id").read[BSONObjectID] and
+      (__ \ "subject").read[String] and
+      (__ \ "body").readNullable [ConversationItemDetails] and
+      (__ \ "validFrom").read [LocalDate] and
+      (__ \ "content").readNullable [String]
+    ){(id, subject, body, validFrom, content) =>
+    ConversationItem(
+      id,
+      subject,
+      body,
+      validFrom,
+      content.map(content => decodeBase64String(content)))
+  }
 }
 
 object FormId extends Enumeration {
@@ -115,9 +135,11 @@ case class ConversationItemDetails(
   adviser: Option[Adviser] = None)
 
 case class ConversationItem (
-  id: String,
+  id: BSONObjectID,
   subject: String,
   body: Option[ConversationItemDetails],
   validFrom: LocalDate,
   content: Option[String]
 )
+
+

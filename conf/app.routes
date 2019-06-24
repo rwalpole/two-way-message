@@ -16,5 +16,3 @@ GET        /message/adviser/message-content/:messageId     uk.gov.hmrc.twowaymes
 GET        /message/admin/:formId/response-time            uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.getCurrentResponseTime(formId)
 
 POST       /dms/submit                                     uk.gov.hmrc.gform.dms.DmsSubmissionController.submitToDms()
-
-GET        /messages/:id                                   uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.createConversation(id: String)

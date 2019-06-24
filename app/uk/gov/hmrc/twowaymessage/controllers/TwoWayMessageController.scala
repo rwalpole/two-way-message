@@ -22,6 +22,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import play.twirl.api.Html
+import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
@@ -35,7 +36,7 @@ import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
 import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
-import uk.gov.hmrc.twowaymessage.services.{HtmlCreatorService, TwoWayMessageService}
+import uk.gov.hmrc.twowaymessage.services.{HtmlCreatorServiceImpl, TwoWayMessageService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.twowaymessage.model.MessageFormat._
@@ -43,7 +44,7 @@ import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 @Singleton
 class TwoWayMessageController @Inject()(
                                          twms: TwoWayMessageService,
-                                         hcs:  HtmlCreatorService,
+                                         hcs:  HtmlCreatorServiceImpl,
                                          val authConnector: AuthConnector,
                                          val gformConnector: GformConnector)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
@@ -79,14 +80,6 @@ class TwoWayMessageController @Inject()(
     implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
     twms.findMessagesBy(messageId).map {
       case Left(messages) => Ok(Json.toJson(messages))
-      case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
-    }
-  }
-
-  def createConversation(latestMessageId: String): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
-    twms.findMessagesBy(latestMessageId).map {
-      case Left(messages) => Ok(hcs.createConversation(latestMessageId,messages))
       case Right(errors) => BadRequest(Json.obj("error" -> 400, "message" -> errors))
     }
   }
