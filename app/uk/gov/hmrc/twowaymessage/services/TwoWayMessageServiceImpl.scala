@@ -121,7 +121,7 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       case CREATED =>
         response.json.validate[Identifier].asOpt match {
           case Some(identifier) =>
-            htmlCreatorService.getConversation(identifier.id, Advisor).flatMap {
+            getConversation(identifier.id, Advisor).flatMap {
               case Left(html) => createDmsSubmission(html.toString,response,dmsMetaData)
               case Right(error) => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, error))
             }
@@ -136,6 +136,13 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
         case Some(content) => Future successful Some(content)
         case None => Future.successful(None)
       })
+  }
+
+  override def getConversation(messageId: String, replyType: ReplyType): Future[Either[Html,String]] = {
+    findMessagesBy(messageId).map {
+      case Left(list) => Left(htmlCreatorService.createConversation(messageId,list,replyType))
+      case Right(error) => Right(error)
+    }
   }
 
 }

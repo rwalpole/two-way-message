@@ -58,7 +58,7 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
 
   val listOfConversationItems = List(
     ConversationItem(
-      BSONObjectID.apply("5d02201b5b0000360151779e"),
+      "5d02201b5b0000360151779e",
       "Matt Test 1",
       Some(ConversationItemDetails(MessageType.Adviser,
         FormId.Reply,
@@ -72,7 +72,7 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
         "But if you think there's something important missing, just ask another question about this below." +
         "</br>Regards</br>Matthew Groom</br>HMRC digital team.")
   ),ConversationItem(
-      BSONObjectID.apply("5d021fbe5b0000200151779c"),
+      "5d021fbe5b0000200151779c",
       "Matt Test 1",
       Some(ConversationItemDetails(MessageType.Customer,
         FormId.Question,
@@ -88,8 +88,8 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
         mockTwoWayMessageService
           .findMessagesBy(any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Left(listOfConversationItems)))
-      val result = await(htmlCreatorService.getConversation(latestMessage,Customer))
-      result shouldBe Left(Html.apply(<h1 class="govuk-heading-xl margin-top-small margin-bottom-small">
+      val result = await(htmlCreatorService.createConversation(latestMessage,listOfConversationItems,Customer))
+      result shouldBe Html.apply(<h1 class="govuk-heading-xl margin-top-small margin-bottom-small">
           Matt Test 1
         </h1><p class="message_time faded-text--small">
         This message was sent to you on 13 June 2019
@@ -101,7 +101,7 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
         You sent this message on 13 June 2019
       </p><p>
           Hello, my friend!<br/>
-        </p>.mkString))
+        </p>.mkString)
     }
 
     "create HTML content for an advisor" in {
@@ -109,13 +109,13 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
         mockTwoWayMessageService
           .findMessagesBy(any[String])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Left(listOfConversationItems)))
-      val result = await(htmlCreatorService.getConversation(latestMessage,Advisor))
+      val result = await(htmlCreatorService.createConversation(latestMessage, listOfConversationItems, Advisor))
       result shouldBe
-      Left(Html.apply(<p class="message_time faded-text--small">
+      Html.apply(<p class="message_time faded-text--small">
           <span>13 June 2019 by HMRC</span>
         </p><p>Dear TestUser Thank you for your message of 13 June 2019.&lt;/br&gt;To recap your question, I think you're asking for help with&lt;/br&gt;I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below.&lt;/br&gt;Regards&lt;/br&gt;Matthew Groom&lt;/br&gt;HMRC digital team.</p><p class="message_time faded-text--small">
           <span>13 June 2019 by the customer</span>
-        </p><p>Hello, my friend!</p>.mkString))
+        </p><p>Hello, my friend!</p>.mkString)
     }
   SharedMetricRegistries.clear()
   }

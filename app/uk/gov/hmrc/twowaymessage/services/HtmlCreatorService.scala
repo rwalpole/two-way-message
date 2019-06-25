@@ -18,14 +18,11 @@ package uk.gov.hmrc.twowaymessage.services
 
 import com.google.inject.ImplementedBy
 import play.twirl.api.Html
-import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
-
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.twowaymessage.model.ConversationItem
 
 @ImplementedBy(classOf[HtmlCreatorServiceImpl])
 trait HtmlCreatorService {
-  def getConversation(messageId: String, replyType: ReplyType)(implicit ec: ExecutionContext): Future[Either[Html,String]]
+  def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: ReplyType):Html
 
 }
 

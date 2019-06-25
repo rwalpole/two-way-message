@@ -19,32 +19,26 @@ package uk.gov.hmrc.twowaymessage.services
 import javax.inject.Inject
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
+import play.twirl.api.{Html, HtmlFormat}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.twowaymessage.model.{ConversationItem, MessageType}
-import play.twirl.api.{Html, HtmlFormat}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-class HtmlCreatorServiceImpl @Inject()(twoWayMessageService: TwoWayMessageService)
-                                      (implicit ec: ExecutionContext) {
+class HtmlCreatorServiceImpl @Inject()()
+                                      (implicit ec: ExecutionContext) extends HtmlCreatorService {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  def getConversation(messageId: String, replyType: ReplyType): Future[Either[Html,String]] = {
-    twoWayMessageService.findMessagesBy(messageId).map {
-      case Left(list) => Left(createConversation(messageId,list,replyType))
-      case Right(error) => Right(error)
-    }
-  }
 
-  def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: ReplyType):Html = {
+  override def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: ReplyType):Html = {
     HtmlFormat.fill(createConversationList(sortConversation(latestMessageId, messages),replyType))
   }
 
   def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem] = {
 
     def sortConversation(messageId: String, messages: List[ConversationItem], orderedMsgList: List[ConversationItem]): List[ConversationItem] = {
-      val message = messages.find(message => message.id.stringify == messageId).get
+      val message = messages.find(message => message.id == messageId).get
       message.body.flatMap(_.replyTo) match {
         case None => orderedMsgList :+ message
         case Some(replyToId) => sortConversation(replyToId, messages, orderedMsgList :+ message)
@@ -92,7 +86,7 @@ class HtmlCreatorServiceImpl @Inject()(twoWayMessageService: TwoWayMessageServic
         val enquiryType = conversationItem.body.flatMap {
           _.enquiryType
         }.getOrElse("")
-        val formActionUrl = s"/two-way-message-frontend/message/customer/$enquiryType/" + conversationItem.id.stringify + "/reply"
+        val formActionUrl = s"/two-way-message-frontend/message/customer/$enquiryType/" + conversationItem.id + "/reply"
         conversationItem.body.map(_.`type`) match {
           case Some(msgType) => msgType match {
             case MessageType.Adviser => s"""<a href="$formActionUrl#reply-input-label">Send another message about this</a>"""
@@ -152,4 +146,5 @@ class HtmlCreatorServiceImpl @Inject()(twoWayMessageService: TwoWayMessageServic
     val dateFormatter = DateTimeFormat.forPattern("dd MMMM yyyy")
 
     private def formatter(date: LocalDate): String = date.toString(dateFormatter)
+
 }

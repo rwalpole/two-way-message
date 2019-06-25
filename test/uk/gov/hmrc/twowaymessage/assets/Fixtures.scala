@@ -17,7 +17,6 @@
 package uk.gov.hmrc.twowaymessage.assets
 
 import org.joda.time.LocalDate
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.twowaymessage.model.{Message, _}
 
 trait Fixtures {
@@ -37,7 +36,7 @@ trait Fixtures {
   )
 
   val testConversationItem = ConversationItem(
-    id = BSONObjectID("5d02201b5b0000360151779e"),
+    id = "5d02201b5b0000360151779e",
     subject = "test subject",
     body = Some(
       ConversationItemDetails(
@@ -51,7 +50,7 @@ trait Fixtures {
     content = Some("test-content")
   )
 
-  def conversationItem(id:BSONObjectID) =
+  def conversationItem(id:String) =
      s"""
      | {
      |     "renderUrl": {
@@ -99,7 +98,7 @@ trait Fixtures {
      | }
      """.stripMargin
 
-  def conversationItems(id1:BSONObjectID, id2: BSONObjectID) =
+  def conversationItems(id1:String, id2: String) =
     s"""
            | [
            | ${conversationItem(id1)},

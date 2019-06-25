@@ -26,13 +26,15 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.HttpEntity.Strict
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, Json}
 import play.api.test.Helpers._
 import play.mvc.Http
+import play.twirl.api.Html
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.domain.Nino
-import uk.gov.hmrc.gform.dms.DmsMetadata
+import uk.gov.hmrc.gform.dms.{DmsHtmlSubmission, DmsMetadata}
+import uk.gov.hmrc.gform.gformbackend.GformConnector
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -40,6 +42,7 @@ import uk.gov.hmrc.twowaymessage.assets.Fixtures
 import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
 import uk.gov.hmrc.twowaymessage.model._
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -48,12 +51,16 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
   implicit val mockExecutionContext = mock[ExecutionContext]
   implicit val mockHeaderCarrier = mock[HeaderCarrier]
   val mockMessageConnector = mock[MessageConnector]
+  val mockGformConnector = mock[GformConnector]
+  val mockHtmlCreationService = mock[HtmlCreatorService]
 
   lazy val mockhttpClient = mock[HttpClient]
   lazy val mockServiceConfig = mock[ServicesConfig]
 
   val injector = new GuiceApplicationBuilder()
     .overrides(bind[MessageConnector].to(mockMessageConnector))
+    .overrides(bind[GformConnector].to(mockGformConnector))
+    .overrides(bind[HtmlCreatorService].to(mockHtmlCreationService))
     .injector()
 
   val messageService = injector.instanceOf[TwoWayMessageService]
@@ -77,20 +84,56 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       Option.empty
     )
 
-    "return 201 (Created) when a message is successfully created by the message service" in {
+   val conversationItem = List(ConversationItem(
+      "5d02201b5b0000360151779e",
+      "Matt Test 1",
+      Some(ConversationItemDetails(MessageType.Adviser,
+        FormId.Reply,
+        Some(LocalDate.parse("2019-06-13")),
+        Some("5d021fbe5b0000200151779c"),
+        Some("P800"))),
+      LocalDate.parse("2019-06-13"),
+      Some("Dear TestUser Thank you for your message of 13 June 2019.</br>To recap your question, " +
+        "I think you're asking for help with</br>I believe this answers your question and hope you are satisfied with the response. " +
+        "There's no need to send a reply. " +
+        "But if you think there's something important missing, just ask another question about this below." +
+        "</br>Regards</br>Matthew Groom</br>HMRC digital team.")))
+
+      "return 201 (Created) when a message is successfully created by the message service" in {
       when(
         mockMessageConnector
-          .postMessage(any[Message])(any[HeaderCarrier]))
+          .postMessage(any[Message])(any[HeaderCarrier])
+      )
         .thenReturn(
           Future.successful(
             HttpResponse(Http.Status.CREATED, Some(Json.parse("{\"id\":\"5c18eb2e6f0000100204b161\"}")))
           )
         )
-      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
-        Future.successful(
-          HttpResponse(Http.Status.OK, None, Map.empty, Some("<p>Some message text.</p>"))
-        )
+      when(
+        mockMessageConnector
+          .getMessages(any[String])(any[HeaderCarrier])
       )
+        .thenReturn(
+          Future.successful(
+            HttpResponse(Http.Status.OK, Some(Json.toJson(conversationItem)))
+          )
+        )
+      when(
+        mockGformConnector
+          .submitToDmsViaGform(any[DmsHtmlSubmission])(any[HeaderCarrier], any[ExecutionContext])
+      )
+          .thenReturn(
+            Future.successful(
+              HttpResponse(Http.Status.CREATED)
+            )
+          )
+      when(
+        mockHtmlCreationService.createConversation(any[String],any[List[ConversationItem]],any[ReplyType])
+      )
+          .thenReturn(
+            Html.apply(<html/>.mkString)
+          )
+
       val name = Name(Option("firstname"), Option("surname"))
       val messageResult = await(messageService.post("p800", nino, twoWayMessageExample, dmsMetadataExample, name))
       messageResult.header.status shouldBe 201
@@ -262,7 +305,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
 
   "TwoWayMessageService.findMessagesListBy" should {
 
-    val fixtureMessages = conversationItems(BSONObjectID("5c2dec526900006b000d53b1"), BSONObjectID("5c2dec526900006b000d53b1"))
+    val fixtureMessages = conversationItems("5c2dec526900006b000d53b1", "5c2dec526900006b000d53b1")
     "return a list of messages if successfully fetched from the message service" in {
       when(
         mockMessageConnector
@@ -367,46 +410,6 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     "SSB0aGluayB0aGF0IHRoZSBhc3Nlc3NtZW50IGZvciBsYXN0IHllYXIgaXMgaW5jb3JyZWN0LiBJdCBzaG93cyBteSBDb21wYW55IGNhciB3aXRoIEImUSBhbmQgaXQgYWxzbyBzaG93cyB0aGF0IEkgd2FzIHJlY2VpdmluZyBhIGZ1ZWwgYmVuZWZpdC4KCkkgZGlkIHN0aWxsIGhhdmUgbXkgRm9yZCBGb2N1cyBjb21wYW55IGNhciBsYXN0IHllYXIgYnV0IEImUSBjaGFuZ2VkIHRoZWlyIHBvbGljeSBvbiBmdWVsLiBXZSBub3cgc3VibWl0IGEgbW9udGhseSBzaGVldCBzaG93aW5nIGFsbCBvdXIgYnVzaW5lc3MgYW5kIHBlcnNvbmFsIG1pbGVhZ2UuIEImUSBwYXlyb2xsIHRoZW4gY2hhcmdlIHVzIGJhY2sgdGhlIHBlcmNlbnRhZ2Ugb2YgcGVyc29uYWwgbWlsZWFnZSBpbiBvdXIgbmV4dCBwYXkgc2xpcC4KCkImUSBjaGFuZ2VkIHRoZSBwb2xpY3kgaW4gQXByaWwgMjAxOC4KCkkgdGhpbmsgdGhpcyBtZWFucyB5b3Ugd2lsbCBvd2UgbWUgc29tZSBtb25leSBvbiB0YXggcmF0aGVyIHRoYW4gbXkgb3duaW5nIG1vbmV5IHRvIHlvdS4=",
     Option.empty
   )
-
-//  "TwoWayMessageService.createHtmlMessage" should {
-//    "return HTML as a string" in {
-//
-//      val htmlString = <h1 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h1>
-//        <p class="message_time faded-text--small">You sent this message on 12 March 2019</p>
-//        <p>What happens if I refuse to pay?</p>
-//          <hr/>
-//        <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
-//        <p class="message_time faded-text--small">This message was sent to you on 12 March 2019</p>
-//        <p>I'm sorry but this tax bill is for you and you need to pay it.
-//
-//        You can pay it online of at your bank.</p>
-//          <hr/>
-//        <h2 class="govuk-heading-xl margin-top-small margin-bottom-small">Incorrect tax bill</h2>
-//        <p class="message_time faded-text--small">You sent this message on 12 March 2019</p>
-//        <p>I have been sent a tax bill that I'm sure is for someone else as I don't earn any money. Please can you check.</p>.mkString
-//
-//      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
-//        Future.successful(
-//          HttpResponse(Http.Status.OK, None, Map.empty, Some(htmlString))
-//        )
-//      )
-//      val expectedHtml =
-//        <p class="govuk-body-l"><span id="nino" class="govuk-font-weight-bold">National insurance number</span>AA112211A</p>.mkString
-//      val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
-//      /* The following can only be used for local testing of PDF generation as wkhtmltopdf is not available on the build server */
-//      //PdfTestUtil.generatePdfFromHtml(actualHtml.get,"result.pdf")
-//      assert(actualHtml.get.contains(expectedHtml))
-//
-//    }
-//
-//    "return an empty string" in {
-//      when(mockMessageConnector.getMessageContent(any[String])(any[HeaderCarrier])).thenReturn(
-//        Future.successful(HttpResponse(Http.Status.BAD_GATEWAY))
-//      )
-//      val actualHtml = await(messageService.createHtmlMessage("123", Nino("AA112211A"), htmlMessageExample.content, htmlMessageExample.subject))
-//      actualHtml shouldBe None
-//    }
-//  }
 
   "TwoWayMessageService.getMessageContentBy" should {
     "return Html content of the message" in {

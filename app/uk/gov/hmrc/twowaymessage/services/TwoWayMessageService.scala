@@ -22,6 +22,7 @@ import play.api.http.Status._
 import play.api.libs.json._
 import play.api.mvc.Result
 import play.api.mvc.Results._
+import play.twirl.api.Html
 import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
@@ -52,6 +53,8 @@ trait TwoWayMessageService {
   def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result]
 
   def getMessageContentBy(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]]
+
+  def getConversation(messageId: String, replyType: ReplyType): Future[Either[Html,String]]
 
   def createJsonForMessage(refId: String, twoWayMessage: TwoWayMessage, nino: Nino, queueId: String, name: Name): Message = {
     val responseTime = Enquiry(queueId).get.responseTime

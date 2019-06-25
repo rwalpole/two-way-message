@@ -154,7 +154,7 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
   "GET list of messages via message connector" should {
 
     "returns 200 successfully for a valid messageId" in {
-      val jsonResponseBody = conversationItems(BSONObjectID("123456"), BSONObjectID("654321"))
+      val jsonResponseBody = conversationItems("123456", "654321")
 
       val messageId = "5d12eb115f0000000205c150"
       givenThat(

@@ -58,16 +58,14 @@ object MessageFormat {
 
   implicit val messageFormat: Format[Message] = Json.format[Message]
 
-  implicit val conversationItemFormat: Writes[ConversationItem] = Json.writes[ConversationItem]
-
-  implicit val bsonObjectIdWrites: Format[BSONObjectID] = Json.format[BSONObjectID]
+  implicit val conversationItemWrites: Writes[ConversationItem] = Json.writes[ConversationItem]
 
   implicit val conversationItemReads: Reads[ConversationItem] = (
-    (__ \ "_id").read[BSONObjectID] and
+    (__ \ "id").read[String] and
       (__ \ "subject").read[String] and
-      (__ \ "body").readNullable [ConversationItemDetails] and
-      (__ \ "validFrom").read [LocalDate] and
-      (__ \ "content").readNullable [String]
+      (__ \ "body").readNullable[ConversationItemDetails] and
+      (__ \ "validFrom").read[LocalDate] and
+      (__ \ "content").readNullable[String]
     ){(id, subject, body, validFrom, content) =>
     ConversationItem(
       id,
@@ -135,7 +133,7 @@ case class ConversationItemDetails(
   adviser: Option[Adviser] = None)
 
 case class ConversationItem (
-  id: BSONObjectID,
+  id: String,
   subject: String,
   body: Option[ConversationItemDetails],
   validFrom: LocalDate,
