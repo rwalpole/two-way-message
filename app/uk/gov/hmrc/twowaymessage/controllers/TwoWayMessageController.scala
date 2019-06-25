@@ -17,10 +17,11 @@
 package uk.gov.hmrc.twowaymessage.controllers
 
 import javax.inject.{Inject, Singleton}
-
+import javax.swing.text.html.HTML
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc._
+import play.api.mvc.{Action, _}
+import play.twirl.api.Html
 import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
 import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
@@ -31,19 +32,21 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.WithJsonBody
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
-import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.model.{MessageType, _}
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
-import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
+import uk.gov.hmrc.twowaymessage.services.{HtmlCreatorService, TwoWayMessageService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.twowaymessage.model.MessageFormat._
+import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
 @Singleton
 class TwoWayMessageController @Inject()(
   twms: TwoWayMessageService,
   val authConnector: AuthConnector,
-  val gformConnector: GformConnector)(implicit ec: ExecutionContext)
+  val gformConnector: GformConnector,
+  val htmlCreatorService:HtmlCreatorService)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
 
   // Customer creating a two-way message
@@ -160,4 +163,34 @@ class TwoWayMessageController @Inject()(
       case _ => Future.successful(NotFound)
     }
   }
+
+
+  def getContentBy(id: String, msgType: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+
+      authorised(Enrolment("HMRC-NI")) {
+
+        def createMsg(typ: MessageType.MessageType): Future[Result] = {
+          htmlCreatorService.getConversation(id, typ).map {
+            case Right(htmlContent) =>
+              if (htmlContent.toString.isEmpty) {
+                Logger.warn(s"""Content for message with id: $id is empty""")
+              }
+              Ok(htmlContent)
+            case Left(err) =>
+              Logger.warn(s"HtmlCreatorService conversion error: $err")
+              Ok("")
+          }
+        }
+
+        msgType match {
+          case "Customer" => createMsg(MessageType.Customer)
+          case "Adviser" => createMsg(MessageType.Adviser)
+          case _ => Future.successful(BadRequest)
+        }
+
+      } recover handleError
+  }
+
 }

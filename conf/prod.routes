@@ -1,5 +1,9 @@
 # Add all the application routes to the app.routes file
+
 ->         /two-way-message              app.Routes
 ->         /                          health.Routes
+
+GET        /messages/:id/content      uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.getContentBy(id:String, msgType ?= "Customer")
+GET        /messages/:id/adviser-content      uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.getContentBy(id:String, msgType ?= "Adviser")
 
 GET        /admin/metrics             com.kenshoo.play.metrics.MetricsController.metrics
