@@ -128,10 +128,10 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
             )
           )
       when(
-        mockHtmlCreationService.createConversation(any[String],any[List[ConversationItem]],any[ReplyType])
+        mockHtmlCreationService.createConversation(any[String],any[List[ConversationItem]],any[RenderType.ReplyType])(any[ExecutionContext])
       )
           .thenReturn(
-            Html.apply(<html/>.mkString)
+            Future.successful(Right(Html.apply(<html/>.mkString)))
           )
 
       val name = Name(Option("firstname"), Option("surname"))
@@ -163,7 +163,7 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
       details = MetadataDetails(
         threadId = Some("5c18eb166f0000110204b160"),
         enquiryType = Some("P800"),
-        adviser = Some(Adviser("adviser-id"))
+        adviser = Some(Adviser("123"))
       ),
       None,
       Some("08 May 2019")

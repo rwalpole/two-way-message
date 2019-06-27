@@ -17,6 +17,7 @@
 package uk.gov.hmrc.twowaymessage.services
 
 import javax.inject.Inject
+import javax.swing.text.html.HTML
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import play.twirl.api.{Html, HtmlFormat}
@@ -24,6 +25,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.twowaymessage.model.{ConversationItem, MessageType}
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import scala.xml.XML
 
 class HtmlCreatorServiceImpl @Inject()()
                                       (implicit ec: ExecutionContext) extends HtmlCreatorService {
@@ -31,8 +34,12 @@ class HtmlCreatorServiceImpl @Inject()()
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
 
-  override def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: ReplyType):Html = {
-    HtmlFormat.fill(createConversationList(sortConversation(latestMessageId, messages),replyType))
+  override def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: RenderType.ReplyType)
+                                 (implicit ec: ExecutionContext):Future[Either[String,Html]] = {
+
+    val sortedList = sortConversation(latestMessageId, messages)
+
+    Future.successful(Right(HtmlFormat.fill(createConversationList(sortedList,replyType))))
   }
 
   def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem] = {
@@ -47,8 +54,8 @@ class HtmlCreatorServiceImpl @Inject()()
     sortConversation(latestMessageId, messages, List())
   }
 
-  private def createConversationList(messages: List[ConversationItem], replyType: ReplyType):List[Html] = {
-    if(replyType == Customer) {
+  private def createConversationList(messages: List[ConversationItem], replyType: RenderType.ReplyType):List[Html] = {
+    if(replyType == RenderType.Customer) {
       val latestMessage = format2wsMessageForCustomer(messages.head, true)
       val restOfList = for {
         msg <- messages.tail
@@ -67,7 +74,8 @@ class HtmlCreatorServiceImpl @Inject()()
         <p class="message_time faded-text--small">
           <span>{getAdviserDatesText(conversationItem)}</span>
         </p>
-        <p>{conversationItem.content.getOrElse("")}</p>
+        <p>{val content = conversationItem.content.getOrElse("")
+        XML.loadString("<root>" + content.replaceAllLiterally("<br>","<br/>") + "</root>").child}</p>
       Html.apply(message.mkString)
     }
 
@@ -100,9 +108,10 @@ class HtmlCreatorServiceImpl @Inject()()
         {getCustomerDateText(conversationItem)}
       </p>
         <p>
-          {conversationItem.content.getOrElse("").trim.split('\n').map(s => {
-          s
-        } ++ <br/>)}
+          {
+          val content = conversationItem.content.getOrElse("")
+          XML.loadString("<root>" + content.replaceAllLiterally("<br>","<br/>") + "</root>").child
+          }
         </p> ++ replyForm
 
 

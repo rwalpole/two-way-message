@@ -91,13 +91,15 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
     }
   }
-
-  override def findMessagesBy(messageId: String)(implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]] =
-    messageConnector.getMessages(messageId).flatMap{
-      response => response.json.validate[List[ConversationItem]].fold(
-        errors => Future.successful(Right(Json stringify JsError.toJson(errors))),
+  //TODO: In future fix the either to be evaluate the correct left and right.
+  override def findMessagesBy(messageId: String)(implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]] = {
+    messageConnector.getMessages(messageId).flatMap {
+      response =>
+        response.json.validate[List[ConversationItem]].fold(
+          errors => Future.successful(Right(Json stringify JsError.toJson(errors))),
           msgList => Future.successful(Left(msgList))
-      )
+        )
+    }
  }
 
   override def getMessageContentBy(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
@@ -121,9 +123,9 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       case CREATED =>
         response.json.validate[Identifier].asOpt match {
           case Some(identifier) =>
-            getConversation(identifier.id, Advisor).flatMap {
-              case Left(html) => createDmsSubmission(html.toString,response,dmsMetaData)
-              case Right(error) => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, error))
+            getConversation(identifier.id, RenderType.Adviser).flatMap {
+              case Left(error) => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, error.toString))
+              case Right(html) => createDmsSubmission(html.toString,response,dmsMetaData)
             }
           case None => Future.successful(errorResponse(INTERNAL_SERVER_ERROR, "Failed to create enquiry reference"))
         }
@@ -137,11 +139,11 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
         case None => Future.successful(None)
       })
   }
-
-  override def getConversation(messageId: String, replyType: ReplyType): Future[Either[Html,String]] = {
-    findMessagesBy(messageId).map {
-      case Left(list) => Left(htmlCreatorService.createConversation(messageId,list,replyType))
-      case Right(error) => Right(error)
+//TODO: In future fix the either to be evaluate the correct left and right.
+  override def getConversation(messageId: String, replyType: RenderType.ReplyType)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
+    findMessagesBy(messageId).flatMap {
+      case Right(error) => Future.successful( Left(error))
+      case Left(list) => htmlCreatorService.createConversation(messageId,list,replyType)
     }
   }
 

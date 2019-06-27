@@ -17,14 +17,12 @@
 package uk.gov.hmrc.twowaymessage.controllers
 
 import javax.inject.{Inject, Singleton}
-import javax.swing.text.html.HTML
 import play.api.Logger
 import play.api.libs.json._
-import play.api.mvc._
+import play.api.mvc.{Action, _}
 import play.twirl.api.Html
-import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
@@ -33,20 +31,19 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.bootstrap.controller.WithJsonBody
 import uk.gov.hmrc.twowaymessage.enquiries.Enquiry
-import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import uk.gov.hmrc.twowaymessage.model.MessageMetadataFormat._
 import uk.gov.hmrc.twowaymessage.model.TwoWayMessageFormat._
-import uk.gov.hmrc.twowaymessage.services.{HtmlCreatorServiceImpl, TwoWayMessageService}
+import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.services._
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 @Singleton
 class TwoWayMessageController @Inject()(
-                                         twms: TwoWayMessageService,
-                                         hcs:  HtmlCreatorServiceImpl,
-                                         val authConnector: AuthConnector,
-                                         val gformConnector: GformConnector)(implicit ec: ExecutionContext)
+  twms: TwoWayMessageService,
+  val authConnector: AuthConnector,
+  val gformConnector: GformConnector)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
 
   // Customer creating a two-way message
@@ -163,4 +160,35 @@ class TwoWayMessageController @Inject()(
       case _ => Future.successful(NotFound)
     }
   }
+
+
+  def getContentBy(id: String, msgType: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+
+      authorised(Enrolment("HMRC-NI")) {
+
+        def createMsg(typ: RenderType.ReplyType): Future[Result] = {
+          val res: Future[Either[String,Html]] = twms.getConversation(id, typ)
+          res.map {
+            case Right(htmlContent) =>
+              if (htmlContent.toString.isEmpty) {
+                Logger.warn(s"""Content for message with id: $id is empty""")
+              }
+              Ok(htmlContent)
+            case Left(err) =>
+              Logger.warn(s"HtmlCreatorService conversion error: $err")
+              Ok("")
+          }
+        }
+
+        msgType match {
+          case "Customer" => createMsg(RenderType.Customer)
+          case "Adviser" => createMsg(RenderType.Adviser)
+          case _ => Future.successful(BadRequest)
+        }
+
+      } recover handleError
+  }
+
 }

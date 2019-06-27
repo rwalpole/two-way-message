@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.twowaymessage.controllers
 
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 import com.codahale.metrics.SharedMetricRegistries
+import com.sun.javafx.sg.prism.NodeEffectInput.RenderType
+import org.joda.time.LocalDate
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -26,28 +28,36 @@ import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
+import play.api.mvc.Result
 import play.api.mvc.Results._
 import play.api.test.{FakeHeaders, FakeRequest, Helpers}
+import play.mvc.Http
+import play.twirl.api.Html
 import uk.gov.hmrc.auth.core.authorise.{EmptyPredicate, Predicate}
 import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
 import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, InsufficientEnrolments, MissingBearerToken}
 import uk.gov.hmrc.domain.Nino
 import uk.gov.hmrc.gform.dms.DmsMetadata
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.twowaymessage.assets.TestUtil
 import uk.gov.hmrc.twowaymessage.connector.mocks.MockAuthConnector
-import uk.gov.hmrc.twowaymessage.model.{TwoWayMessage, TwoWayMessageReply}
+import uk.gov.hmrc.twowaymessage.connectors.MessageConnector
+import uk.gov.hmrc.twowaymessage.model._
+import uk.gov.hmrc.twowaymessage.services.RenderType.ReplyType
 import uk.gov.hmrc.twowaymessage.services.TwoWayMessageService
+import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 
 import scala.concurrent.Future
 
 class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
 
   val mockMessageService = mock[TwoWayMessageService]
+  val mockMessageConnector = mock[MessageConnector]
 
   override lazy val injector = new GuiceApplicationBuilder()
     .overrides(bind[TwoWayMessageService].to(mockMessageService))
     .overrides(bind[AuthConnector].to(mockAuthConnector))
+    .overrides(bind[MessageConnector].to(mockMessageConnector))
     .injector()
 
   val testTwoWayMessageController = injector.instanceOf[TwoWayMessageController]
@@ -133,10 +143,11 @@ class AuthTwoWayMessageControllerSpec extends TestUtil with MockAuthConnector {
 
     "return 403 (FORBIDDEN) when AuthConnector returns an exception that doesn't extend NoActiveSession" in {
       mockAuthorise(Enrolment("HMRC-NI"))(Future.failed(InsufficientEnrolments()))
-      val result = await(testTwoWayMessageController.createCustomerResponse("queueName", "replyTo")(fakeRequest1))
+      val result: Result = await(testTwoWayMessageController.createCustomerResponse("queueName", "replyTo")(fakeRequest1))
       status(result) shouldBe Status.FORBIDDEN
     }
 
     SharedMetricRegistries.clear
   }
+
 }
