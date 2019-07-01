@@ -19,7 +19,7 @@ package uk.gov.hmrc.twowaymessage.model
 import org.joda.time.LocalDate
 import org.scalatest._
 import play.api.libs.json.{Json, _}
-import reactivemongo.bson.BSONObjectID
+//import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import uk.gov.hmrc.twowaymessage.model.{Message, _}
 import uk.gov.hmrc.twowaymessage.assets.Fixtures

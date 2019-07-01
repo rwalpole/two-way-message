@@ -86,7 +86,7 @@ class HtmlCreationSpec extends TestUtil with MockAuthConnector {
         Some("5d021fbe5b0000200151779c"),
         Some("P800"))),
       LocalDate.parse("2019-06-13"),
-      Some(Base64.getEncoder.encodeToString("Dear TestUser Thank you for your message of 13 June 2019.</br>To recap your question, I think you're asking for help with</br>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below. </br>Regards</br>Matthew Groom</br>HMRC digital team.".getBytes))
+      Some(Base64.getEncoder.encodeToString("Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below. <br/>Regards<br/>Matthew Groom<br/>HMRC digital team.".getBytes))
     ),ConversationItem(
       "5d021fbe5b0000200151779c",
       "Matt Test 1",
@@ -118,7 +118,7 @@ class HtmlCreationSpec extends TestUtil with MockAuthConnector {
       bodyOf(result) shouldBe
         """<p class="message_time faded-text--small">
           |          <span>13 June 2019 by HMRC</span>
-          |        </p><p>Dear TestUser Thank you for your message of 13 June 2019.&lt;/br&gt;To recap your question, I think you're asking for help with&lt;/br&gt;I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below. &lt;/br&gt;Regards&lt;/br&gt;Matthew Groom&lt;/br&gt;HMRC digital team.</p><p class="message_time faded-text--small">
+          |        </p><p>Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below. <br/>Regards<br/>Matthew Groom<br/>HMRC digital team.</p><p class="message_time faded-text--small">
           |          <span>13 June 2019 by the customer</span>
           |        </p><p>Hello, my friend!</p>""".stripMargin
     }
@@ -145,13 +145,13 @@ class HtmlCreationSpec extends TestUtil with MockAuthConnector {
           |        </h1><p class="message_time faded-text--small">
           |        This message was sent to you on 13 June 2019
           |      </p><p>
-          |          Dear TestUser Thank you for your message of 13 June 2019.&lt;/br&gt;To recap your question, I think you're asking for help with&lt;/br&gt;I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below. &lt;/br&gt;Regards&lt;/br&gt;Matthew Groom&lt;/br&gt;HMRC digital team.<br/>
+          |          Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below. <br/>Regards<br/>Matthew Groom<br/>HMRC digital team.
           |        </p><a href="/two-way-message-frontend/message/customer/P800/5d02201b5b0000360151779e/reply#reply-input-label">Send another message about this</a><h2 class="govuk-heading-xl margin-top-small margin-bottom-small">
           |          Matt Test 1
           |        </h2><p class="message_time faded-text--small">
           |        You sent this message on 13 June 2019
           |      </p><p>
-          |          Hello, my friend!<br/>
+          |          Hello, my friend!
           |        </p>""".stripMargin
     }
 
