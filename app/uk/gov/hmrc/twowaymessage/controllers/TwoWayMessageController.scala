@@ -42,6 +42,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class TwoWayMessageController @Inject()(
   twms: TwoWayMessageService,
+  hcs:  HtmlCreatorService,
   val authConnector: AuthConnector,
   val gformConnector: GformConnector)(implicit ec: ExecutionContext)
     extends InjectedController with WithJsonBody with AuthorisedFunctions {
@@ -166,11 +167,10 @@ class TwoWayMessageController @Inject()(
     implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
 
-      authorised(Enrolment("HMRC-NI")) {
+      authorised(Enrolment("HMRC-NI") or AuthProviders(PrivilegedApplication)) {
 
         def createMsg(typ: RenderType.ReplyType): Future[Result] = {
-          val res: Future[Either[String,Html]] = twms.getConversation(id, typ)
-          res.map {
+          twms.getConversation(id, typ).map {
             case Right(htmlContent) =>
               if (htmlContent.toString.isEmpty) {
                 Logger.warn(s"""Content for message with id: $id is empty""")
@@ -178,7 +178,7 @@ class TwoWayMessageController @Inject()(
               Ok(htmlContent)
             case Left(err) =>
               Logger.warn(s"HtmlCreatorService conversion error: $err")
-              Ok("")
+              BadGateway(err)
           }
         }
 
@@ -191,4 +191,21 @@ class TwoWayMessageController @Inject()(
       } recover handleError
   }
 
+  def getLatestMessage(messageId: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+      twms.getLastestMessage(messageId).map{
+        case Left(error)  => BadGateway(error)
+        case Right(html)  => Ok(html)
+      }
+  }
+
+  def getPreviousMessages(messageId: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers)
+      twms.getPreviousMessages(messageId).map{
+        case Left(error) => BadGateway(error)
+        case Right(html) => Ok(html)
+      }
+  }
 }

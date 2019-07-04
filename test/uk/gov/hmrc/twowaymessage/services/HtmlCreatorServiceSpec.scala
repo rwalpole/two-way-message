@@ -120,4 +120,31 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
     }
   SharedMetricRegistries.clear()
   }
+
+  "createSingleMessageHtml" should {
+
+    val conversationItem = ConversationItem(
+      "5d021fbe5b0000200151779c",
+      "Matt Test 1",
+      Some(ConversationItemDetails(MessageType.Customer,
+        FormId.Question,
+        Some(LocalDate.parse("2019-06-13")),
+        None,
+        Some("p800"))),
+      LocalDate.parse("2019-06-13"),
+      Some("Hello, my friend!"))
+
+    "create one HTML message for the first message" in {
+          val result = await(htmlCreatorService.createSingleMessageHtml(conversationItem))
+      result shouldBe
+        Right(Html.apply(<h1
+        class="govuk-heading-xl margin-top-small margin-bottom-small">
+          Matt Test 1
+        </h1><p class="message_time faded-text--small">
+        You sent this message on 13 June 2019
+      </p><p>
+          Hello, my friend!
+        </p>.mkString))
+    }
+  }
 }

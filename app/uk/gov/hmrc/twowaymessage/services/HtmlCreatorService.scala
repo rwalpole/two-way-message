@@ -29,6 +29,9 @@ trait HtmlCreatorService {
   /** Returns either the HTML conversation for the message ID or an error message */
   def createConversation(messageId: String, listMsg: List[ConversationItem], replyType: RenderType.ReplyType)
                         (implicit ec: ExecutionContext): Future[Either[String,Html]]
+
+  def createSingleMessageHtml(conversationItem: ConversationItem)
+                        (implicit ec: ExecutionContext): Future[Either[String,Html]]
 }
 
 object RenderType {

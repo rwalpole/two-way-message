@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import org.joda.time.LocalDate
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -72,32 +73,33 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
     Details(FormId.Question)
   )
 
+  val jsonResponseBody =
+    """
+      |{
+      |   "id": "5c18eb166f0000110204b160",
+      |   "recipient": {
+      |      "regime": "REGIME",
+      |      "identifier": {
+      |         "name":"HMRC-NI",
+      |         "value":"AB123456C"
+      |      },
+      |      "email":"someEmail@test.com"
+      |   },
+      |   "subject":"SUBJECT",
+      |   "details": {
+      |     "threadId":"5d12eb115f0000000205c150",
+      |     "enquiryType":"p800",
+      |     "adviser": {
+      |       "pidId":"adviser-id"
+      |     }
+      |   },
+      |   "messageDate":"08 May 2019"
+      |}
+    """.stripMargin
+
   "POST message connector" should {
 
     "return 201" in {
-      val jsonResponseBody =
-        """
-          |{
-          |   "externalRef":{
-          |      "id":"123412342314",
-          |      "source":"2WSM-CUSTOMER"
-          |   },
-          |   "recipient":{
-          |      "taxIdentifier":{
-          |         "name":"HMRC-NI",
-          |         "value":"AB123456C"
-          |      },
-          |      "email":"someEmail@test.com"
-          |   },
-          |   "messageType":"2wsm-customer",
-          |   "subject":"SUBJECT",
-          |   "content":"SGVsbG8gV29ybGQ=",
-          |   "details":{
-          |      "formId":"2WSM-question"
-          |   }
-          |}
-        """.stripMargin
-
       givenThat(
         post(urlEqualTo("/messages"))
           .withRequestBody(equalToJson(jsonResponseBody))
@@ -169,6 +171,38 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
       Json.parse(httpResult.body).validate[List[ConversationItem]] shouldBe a[JsSuccess[List[ConversationItem]]]
     }
     SharedMetricRegistries.clear
+  }
+
+  "GET single latest message via message connector" should {
+    "return 200 successful for a valid messageId" in {
+
+      val message = Json.toJson(ConversationItem(
+        "5d02201b5b0000360151779e",
+        "Matt Test 1",
+        Some(ConversationItemDetails(MessageType.Adviser,
+          FormId.Reply,
+          Some(LocalDate.parse("2019-06-13")),
+          Some("5d021fbe5b0000200151779c"),
+          Some("P800"))),
+        LocalDate.parse("2019-06-13"),
+        Some("Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, " +
+          "I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. " +
+          "There's no need to send a reply. " +
+          "But if you think there's something important missing, just ask another question about this below." +
+          "<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.")
+      )).toString.stripMargin
+
+      val messageId = "5d02201b5b0000360151779e"
+      givenThat(
+        get(urlEqualTo(s"/messages/${messageId}"))
+          .willReturn(
+            aResponse()
+              .withStatus(Status.OK)
+              .withBody(message)))
+      val httpResult = await(messageConnector.getOneMessage(messageId)(new HeaderCarrier()))
+      httpResult.status shouldBe(200)
+      Json.parse(httpResult.body).validate[ConversationItem] shouldBe a[JsSuccess[ConversationItem]]
+    }
   }
 }
 

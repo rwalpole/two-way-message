@@ -142,8 +142,36 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
 //TODO: In future fix the either to be evaluate the correct left and right.
   override def getConversation(messageId: String, replyType: RenderType.ReplyType)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
     findMessagesBy(messageId).flatMap {
-      case Right(error) => Future.successful( Left(error))
-      case Left(list) => htmlCreatorService.createConversation(messageId,list,replyType)
+      case Right(error) => Future.successful(Left(error))
+      case Left(list)   => htmlCreatorService.createConversation(messageId,list,replyType)
+    }
+  }
+
+  override def getLastestMessage(messageId: String)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
+    findLastestMessage(messageId).flatMap {
+      case Right(error)   => Future.successful(Left(error))
+      case Left(message)  => htmlCreatorService.createSingleMessageHtml(message)
+    }
+  }
+
+  def findLastestMessage(messageId: String)(implicit hc: HeaderCarrier): Future[Either[ConversationItem, String]] = {
+    messageConnector.getOneMessage(messageId).flatMap {
+      response =>
+        response.status match {
+          case OK =>
+            response.json.validate[ConversationItem].fold(
+            errors => Future.successful(Right(Json stringify JsError.toJson(errors))),
+            msg => Future.successful(Left(msg))
+          )
+          case _ => Future.successful(Right("unable to retrieve message"))
+        }
+    }
+  }
+
+  override def getPreviousMessages(messageId: String)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
+    findMessagesBy(messageId).flatMap {
+      case Right(error)   => Future.successful(Left(error))
+      case Left(list)     => htmlCreatorService.createConversation(messageId,list.tail,RenderType.Customer)
     }
   }
 

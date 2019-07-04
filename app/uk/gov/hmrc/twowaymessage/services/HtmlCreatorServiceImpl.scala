@@ -37,9 +37,12 @@ class HtmlCreatorServiceImpl @Inject()()
   override def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: RenderType.ReplyType)
                                  (implicit ec: ExecutionContext):Future[Either[String,Html]] = {
 
-    val sortedList = sortConversation(latestMessageId, messages)
+    Future.successful(Right(HtmlFormat.fill(createConversationList(sortConversation(latestMessageId, messages),replyType))))
+  }
 
-    Future.successful(Right(HtmlFormat.fill(createConversationList(sortedList,replyType))))
+  override def createSingleMessageHtml(conversationItem: ConversationItem)(implicit ec: ExecutionContext): Future[Either[String,Html]] = {
+
+    Future.successful(Right(format2wsMessageForCustomer(conversationItem,true)))
   }
 
   def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem] = {

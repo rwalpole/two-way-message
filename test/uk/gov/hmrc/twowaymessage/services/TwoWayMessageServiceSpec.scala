@@ -447,4 +447,131 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     }
   }
 
+  "TwoWayMessageService.getLatestMessage" should {
+    "return the latest message as Html" in {
+
+      val conversationItem = ConversationItem(
+        "5d021fbe5b0000200151779c",
+        "Matt Test 1",
+        Some(ConversationItemDetails(MessageType.Customer,
+          FormId.Question,
+          Some(LocalDate.parse("2019-06-13")),
+          None,
+          Some("p800"))),
+        LocalDate.parse("2019-06-13"),
+        Some("Hello, my friend!"))
+
+      val conversationItemAsJson = Json.toJson(conversationItem.toString.stripMargin)
+
+      val htmlConvervsationItem = Html.apply(<h1
+      class="govuk-heading-xl margin-top-small margin-bottom-small">
+        Matt Test 1
+      </h1><p class="message_time faded-text--small">
+        You sent this message on 13 June 2019
+      </p><p>
+        Hello, my friend!
+      </p>.mkString)
+
+      when(mockMessageConnector.getOneMessage(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.OK,Some(conversationItemAsJson),Map.empty, None)
+        )
+      )
+      when(mockHtmlCreationService.createSingleMessageHtml(any[ConversationItem])(any[ExecutionContext])).thenReturn(
+        Future.successful(
+          Right(htmlConvervsationItem)
+        )
+      )
+      val result = await(messageService.getLastestMessage("5d021fbe5b0000200151779c")(mockHeaderCarrier))
+      result.isRight
+    }
+
+    "return a string which contain an error" in {
+      when(mockMessageConnector.getOneMessage(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.BAD_GATEWAY))
+      )
+      val result = await(messageService.getLastestMessage("123")(mockHeaderCarrier))
+      result.isLeft
+    }
+  }
+  val listOfConversationItems = List(
+    ConversationItem(
+      "5d02201b5b0000360151779e",
+      "Matt Test 1",
+      Some(ConversationItemDetails(MessageType.Adviser,
+        FormId.Reply,
+        Some(LocalDate.parse("2019-06-13")),
+        Some("5d021fbe5b0000200151779c"),
+        Some("P800"))),
+      LocalDate.parse("2019-06-13"),
+      Some("Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, " +
+        "I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. " +
+        "There's no need to send a reply. " +
+        "But if you think there's something important missing, just ask another question about this below." +
+        "<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.")
+    ),ConversationItem(
+      "5d021fbe5b0000200151779c",
+      "Matt Test 1",
+      Some(ConversationItemDetails(MessageType.Customer,
+        FormId.Question,
+        Some(LocalDate.parse("2019-06-13")),
+        Some("p800"))),
+      LocalDate.parse("2019-06-13"),
+      Some("Hello, my friend!")))
+
+  val htmlConversationItems = Html.apply(<h1 class="govuk-heading-xl margin-top-small margin-bottom-small">
+    Matt Test 1
+  </h1><p class="message_time faded-text--small">
+    This message was sent to you on 13 June 2019
+  </p><p>
+    Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below.<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.
+  </p><a href="/two-way-message-frontend/message/customer/P800/5d02201b5b0000360151779e/reply#reply-input-label">Send another message about this</a><h2
+  class="govuk-heading-xl margin-top-small margin-bottom-small">
+    Matt Test 1
+  </h2><p class="message_time faded-text--small">
+    You sent this message on 13 June 2019
+  </p><p>
+    Hello, my friend!
+  </p>.mkString)
+
+  val jsonConversationItems = Json.toJson(listOfConversationItems.toString.stripMargin)
+
+  "TwoWayMessageService.getPreviousMessages" should {
+
+    "return a list of messages as Html" in {
+      when(mockMessageConnector.getMessages(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.OK,Some(jsonConversationItems),Map.empty,None)
+        )
+      )
+
+      when(mockHtmlCreationService.createConversation("5d02201b5b0000360151779e",listOfConversationItems.tail,RenderType.Customer)).thenReturn(
+        Future.successful(Right(htmlConversationItems))
+      )
+
+      val result = await(messageService.getPreviousMessages("5d02201b5b0000360151779e")(mockHeaderCarrier))
+      result.isRight
+    }
+  }
+
+  "TwoWayMessageService.getConversation" should {
+    "return a list of messages as Html" in {
+      when(mockMessageConnector.getMessages(any[String])(any[HeaderCarrier])).thenReturn(
+        Future.successful(
+          HttpResponse(Http.Status.OK,Some(jsonConversationItems),Map.empty,None)
+        )
+      )
+
+      when(mockHtmlCreationService.createConversation("5d02201b5b0000360151779e",listOfConversationItems,RenderType.Customer)).thenReturn(
+        Future.successful(Right(htmlConversationItems))
+      )
+
+      val result = await(messageService.getConversation("5d02201b5b0000360151779e",RenderType.Customer)(mockHeaderCarrier))
+      result.isRight
+
+    }
+
+  }
+
 }
