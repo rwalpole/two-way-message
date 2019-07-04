@@ -150,40 +150,7 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
     }
     SharedMetricRegistries.clear
   }
-
-  "GET single latest message via message connector" should {
-    "return 200 successful for a valid messageId" in {
-
-      val message = Json.toJson(ConversationItem(
-        "5d02201b5b0000360151779e",
-        "Matt Test 1",
-        Some(ConversationItemDetails(MessageType.Adviser,
-          FormId.Reply,
-          Some(LocalDate.parse("2019-06-13")),
-          Some("5d021fbe5b0000200151779c"),
-          Some("P800"))),
-        LocalDate.parse("2019-06-13"),
-        Some("Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, " +
-          "I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. " +
-          "There's no need to send a reply. " +
-          "But if you think there's something important missing, just ask another question about this below." +
-          "<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.")
-      )).toString.stripMargin
-
-      val messageId = "5d02201b5b0000360151779e"
-      givenThat(
-        get(urlEqualTo(s"/messages/${messageId}"))
-          .willReturn(
-            aResponse()
-              .withStatus(Status.OK)
-              .withBody(message)))
-      val httpResult = await(messageConnector.getOneMessage(messageId)(new HeaderCarrier()))
-      httpResult.status shouldBe(200)
-      Json.parse(httpResult.body).validate[ConversationItem] shouldBe a[JsSuccess[ConversationItem]]
-    }
-  }
 }
-
 
 trait WithWireMock extends BeforeAndAfterAll with BeforeAndAfterEach {
   suite: Suite =>

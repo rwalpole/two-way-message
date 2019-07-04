@@ -447,54 +447,31 @@ class TwoWayMessageServiceSpec extends WordSpec with Matchers with GuiceOneAppPe
     }
   }
 
-  "TwoWayMessageService.getLatestMessage" should {
-    "return the latest message as Html" in {
-
-      val conversationItem = ConversationItem(
-        "5d021fbe5b0000200151779c",
-        "Matt Test 1",
-        Some(ConversationItemDetails(MessageType.Customer,
-          FormId.Question,
-          Some(LocalDate.parse("2019-06-13")),
-          None,
-          Some("p800"))),
-        LocalDate.parse("2019-06-13"),
-        Some("Hello, my friend!"))
-
-      val conversationItemAsJson = Json.toJson(conversationItem.toString.stripMargin)
-
-      val htmlConvervsationItem = Html.apply(<h1
-      class="govuk-heading-xl margin-top-small margin-bottom-small">
-        Matt Test 1
-      </h1><p class="message_time faded-text--small">
-        You sent this message on 13 June 2019
-      </p><p>
-        Hello, my friend!
-      </p>.mkString)
-
-      when(mockMessageConnector.getOneMessage(any[String])(any[HeaderCarrier])).thenReturn(
-        Future.successful(
-          HttpResponse(Http.Status.OK,Some(conversationItemAsJson),Map.empty, None)
-        )
-      )
-      when(mockHtmlCreationService.createSingleMessageHtml(any[ConversationItem])(any[ExecutionContext])).thenReturn(
-        Future.successful(
-          Right(htmlConvervsationItem)
-        )
-      )
-      val result = await(messageService.getLastestMessage("5d021fbe5b0000200151779c")(mockHeaderCarrier))
-      result.isRight
-    }
-
-    "return a string which contain an error" in {
-      when(mockMessageConnector.getOneMessage(any[String])(any[HeaderCarrier])).thenReturn(
-        Future.successful(
-          HttpResponse(Http.Status.BAD_GATEWAY))
-      )
-      val result = await(messageService.getLastestMessage("123")(mockHeaderCarrier))
-      result.isLeft
-    }
-  }
+//  "TwoWayMessageService.getLatestMessage" should {
+//    "return the latest message as Html" in {
+//
+//      val conversationItem = ConversationItem(
+//        "5d021fbe5b0000200151779c",
+//        "Matt Test 1",
+//        Some(ConversationItemDetails(MessageType.Customer,
+//          FormId.Question,
+//          Some(LocalDate.parse("2019-06-13")),
+//          None,
+//          Some("p800"))),
+//        LocalDate.parse("2019-06-13"),
+//        Some("Hello, my friend!"))
+//
+//      val conversationItemAsJson = Json.toJson(conversationItem.toString.stripMargin)
+//
+//      val htmlConvervsationItem = Html.apply(<h1
+//      class="govuk-heading-xl margin-top-small margin-bottom-small">
+//        Matt Test 1
+//      </h1><p class="message_time faded-text--small">
+//        You sent this message on 13 June 2019
+//      </p><p>
+//        Hello, my friend!
+//      </p>.mkString)
+//  }
   val listOfConversationItems = List(
     ConversationItem(
       "5d02201b5b0000360151779e",

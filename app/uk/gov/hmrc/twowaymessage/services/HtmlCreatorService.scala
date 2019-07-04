@@ -30,8 +30,8 @@ trait HtmlCreatorService {
   def createConversation(messageId: String, listMsg: List[ConversationItem], replyType: RenderType.ReplyType)
                         (implicit ec: ExecutionContext): Future[Either[String,Html]]
 
-  def createSingleMessageHtml(messageId: String, listOfConversationItem: List[ConversationItem])
-                        (implicit ec: ExecutionContext): Future[Either[String,Html]]
+  def createSingleMessageHtml(conversationItem: ConversationItem)
+                             (implicit ec: ExecutionContext): Future[Either[String,Html]]
 }
 
 object RenderType {
