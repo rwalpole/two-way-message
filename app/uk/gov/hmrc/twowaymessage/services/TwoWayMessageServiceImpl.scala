@@ -150,7 +150,7 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
   override def getLastestMessage(messageId: String)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
     findMessagesBy(messageId).flatMap {
       case Right(error)   => Future.successful(Left(error))
-      case Left(list)  => htmlCreatorService.createSingleMessageHtml(list.head)
+      case Left(list)  => htmlCreatorService.createSingleMessageHtml(messageId,list)
     }
   }
 
