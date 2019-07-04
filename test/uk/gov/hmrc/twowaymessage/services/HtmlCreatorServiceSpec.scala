@@ -95,14 +95,14 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
         This message was sent to you on 13 June 2019
       </p><p>
           Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below.<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.
-        </p><a href="/two-way-message-frontend/message/customer/P800/5d02201b5b0000360151779e/reply#reply-input-label">Send another message about this</a><h2
+        </p><a href="/two-way-message-frontend/message/customer/P800/5d02201b5b0000360151779e/reply#reply-input-label">Send another message about this</a><hr/><h2
         class="govuk-heading-xl margin-top-small margin-bottom-small">
           Matt Test 1
         </h2><p class="message_time faded-text--small">
         You sent this message on 13 June 2019
       </p><p>
           Hello, my friend!
-        </p>.mkString))
+        </p><hr/>.mkString))
     }
 
     "create HTML content for an advisor" in {
@@ -114,9 +114,9 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
       result shouldBe
       Right(Html.apply(<p class="message_time faded-text--small">
           <span>13 June 2019 by HMRC</span>
-        </p><p>Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below.<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.</p><p class="message_time faded-text--small">
+        </p><p>Dear TestUser Thank you for your message of 13 June 2019.<br/>To recap your question, I think you're asking for help with<br/>I believe this answers your question and hope you are satisfied with the response. There's no need to send a reply. But if you think there's something important missing, just ask another question about this below.<br/>Regards<br/>Matthew Groom<br/>HMRC digital team.</p><hr/><p class="message_time faded-text--small">
           <span>13 June 2019 by the customer</span>
-        </p><p>Hello, my friend!</p>.mkString))
+        </p><p>Hello, my friend!</p><hr/>.mkString))
     }
   SharedMetricRegistries.clear()
   }
@@ -144,7 +144,7 @@ class HtmlCreatorServiceSpec extends WordSpec with Matchers with GuiceOneAppPerS
         You sent this message on 13 June 2019
       </p><p>
           Hello, my friend!
-        </p>.mkString))
+        </p><hr/>.mkString))
     }
   }
 }

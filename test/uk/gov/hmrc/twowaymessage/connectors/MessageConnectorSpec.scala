@@ -73,36 +73,14 @@ class MessageConnectorSpec extends WordSpec with WithWireMock with Matchers with
     Details(FormId.Question)
   )
 
-  val jsonResponseBody =
-    """
-      |{
-      |   "id": "5c18eb166f0000110204b160",
-      |   "recipient": {
-      |      "regime": "REGIME",
-      |      "identifier": {
-      |         "name":"HMRC-NI",
-      |         "value":"AB123456C"
-      |      },
-      |      "email":"someEmail@test.com"
-      |   },
-      |   "subject":"SUBJECT",
-      |   "details": {
-      |     "threadId":"5d12eb115f0000000205c150",
-      |     "enquiryType":"p800",
-      |     "adviser": {
-      |       "pidId":"adviser-id"
-      |     }
-      |   },
-      |   "messageDate":"08 May 2019"
-      |}
-    """.stripMargin
-
   "POST message connector" should {
+
+    val messageJson = Json.toJson(messageExample)
 
     "return 201" in {
       givenThat(
         post(urlEqualTo("/messages"))
-          .withRequestBody(equalToJson(jsonResponseBody))
+          .withRequestBody(equalToJson(messageJson.toString))
           .willReturn(aResponse().withStatus(Status.CREATED)))
 
       val result = await(messageConnector.postMessage(messageExample)(new HeaderCarrier()))

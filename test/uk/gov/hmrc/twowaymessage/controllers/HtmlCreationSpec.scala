@@ -31,7 +31,8 @@ import play.api.mvc.Result
 import play.api.mvc.Results.Created
 import play.api.test.{FakeHeaders, FakeRequest, Helpers}
 import play.mvc.Http
-import uk.gov.hmrc.auth.core.{AuthConnector, Enrolment, InsufficientEnrolments, MissingBearerToken}
+import uk.gov.hmrc.auth.core.AuthProvider.PrivilegedApplication
+import uk.gov.hmrc.auth.core.{AuthProviders, _}
 import uk.gov.hmrc.auth.core.authorise.{EmptyPredicate, Predicate}
 import uk.gov.hmrc.auth.core.retrieve.{Name, Retrievals, ~}
 import uk.gov.hmrc.domain.Nino
@@ -101,7 +102,7 @@ class HtmlCreationSpec extends TestUtil with MockAuthConnector {
   "The TwoWayMessageController.getContentBy method" should {
     "return 200 (OK) with the content of the conversation in html" in {
       val nino = Nino("AB123456C")
-      mockAuthorise(Enrolment("HMRC-NI"))(Future.successful(Some(nino.value)))
+      mockAuthorise(Enrolment("HMRC-NI") or AuthProviders(PrivilegedApplication))(Future.successful(Some(nino.value)))
       when(
         mockMessageService.postCustomerReply(any[TwoWayMessageReply], ArgumentMatchers.eq("replyTo"))(
           any[HeaderCarrier]))
@@ -125,7 +126,7 @@ class HtmlCreationSpec extends TestUtil with MockAuthConnector {
 
     "return 200 dwq with the content of the conversation in html" in {
       val nino = Nino("AB123456C")
-      mockAuthorise(Enrolment("HMRC-NI"))(Future.successful(Some(nino.value)))
+      mockAuthorise(Enrolment("HMRC-NI") or AuthProviders(PrivilegedApplication))(Future.successful(Some(nino.value)))
       when(
         mockMessageService.postCustomerReply(any[TwoWayMessageReply], ArgumentMatchers.eq("replyTo"))(
           any[HeaderCarrier]))
@@ -159,7 +160,7 @@ class HtmlCreationSpec extends TestUtil with MockAuthConnector {
 
     "return 400 (bad request)  with no content in body" in {
       val nino = Nino("AB123456C")
-      mockAuthorise(Enrolment("HMRC-NI"))(Future.successful(Some(nino.value)))
+      mockAuthorise(Enrolment("HMRC-NI") or AuthProviders(PrivilegedApplication))(Future.successful(Some(nino.value)))
       when(
         mockMessageService.postCustomerReply(any[TwoWayMessageReply], ArgumentMatchers.eq("replyTo"))(
           any[HeaderCarrier]))

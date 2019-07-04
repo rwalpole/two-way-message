@@ -148,23 +148,9 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
   }
 
   override def getLastestMessage(messageId: String)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
-    findLastestMessage(messageId).flatMap {
+    findMessagesBy(messageId).flatMap {
       case Right(error)   => Future.successful(Left(error))
-      case Left(message)  => htmlCreatorService.createSingleMessageHtml(message)
-    }
-  }
-
-  def findLastestMessage(messageId: String)(implicit hc: HeaderCarrier): Future[Either[ConversationItem, String]] = {
-    messageConnector.getOneMessage(messageId).flatMap {
-      response =>
-        response.status match {
-          case OK =>
-            response.json.validate[ConversationItem].fold(
-            errors => Future.successful(Right(Json stringify JsError.toJson(errors))),
-            msg => Future.successful(Left(msg))
-          )
-          case _ => Future.successful(Right("unable to retrieve message"))
-        }
+      case Left(list)  => htmlCreatorService.createSingleMessageHtml(list.head)
     }
   }
 

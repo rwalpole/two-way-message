@@ -78,7 +78,7 @@ class HtmlCreatorServiceImpl @Inject()()
           <span>{getAdviserDatesText(conversationItem)}</span>
         </p>
         <p>{val content = conversationItem.content.getOrElse("")
-        XML.loadString("<root>" + content.replaceAllLiterally("<br>","<br/>") + "</root>").child}</p>
+        XML.loadString("<root>" + content.replaceAllLiterally("<br>","<br/>") + "</root>").child}</p><hr/>
       Html.apply(message.mkString)
     }
 
@@ -115,10 +115,11 @@ class HtmlCreatorServiceImpl @Inject()()
           val content = conversationItem.content.getOrElse("")
           XML.loadString("<root>" + content.replaceAllLiterally("<br>","<br/>") + "</root>").child
           }
-        </p> ++ replyForm
+        </p> ++ replyForm ++ <hr/>
 
 
       Html.apply(xml.mkString)
+
     }
 
     private def getCustomerDateText(message: ConversationItem): String = {
