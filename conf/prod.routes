@@ -3,6 +3,8 @@
 ->         /two-way-message              app.Routes
 ->         /                          health.Routes
 
+GET        /messages/:id/previous-messages    uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.getPreviousMessages(id:String)
+
 GET        /messages/:id/latest-message       uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.getLatestMessage(id:String)
 
 GET        /messages/:id/content              uk.gov.hmrc.twowaymessage.controllers.TwoWayMessageController.getContentBy(id:String, msgType ?= "Customer")

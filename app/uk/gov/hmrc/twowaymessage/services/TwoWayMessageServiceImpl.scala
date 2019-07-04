@@ -43,7 +43,10 @@ import uk.gov.hmrc.twowaymessage.model.MessageFormat._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.xml.Node
 
-class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gformConnector: GformConnector, servicesConfig: ServicesConfig, htmlCreatorService: HtmlCreatorService)(implicit ec: ExecutionContext) extends TwoWayMessageService {
+class TwoWayMessageServiceImpl @Inject()
+(messageConnector: MessageConnector, gformConnector: GformConnector,
+servicesConfig: ServicesConfig, htmlCreatorService: HtmlCreatorService)
+(implicit ec: ExecutionContext) extends TwoWayMessageService {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -52,7 +55,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
     xml.child
   }
 
-  override def getMessageMetadata(messageId: String)(implicit hc: HeaderCarrier): Future[Option[MessageMetadata]] = {
+  override def getMessageMetadata(messageId: String)
+                                 (implicit hc: HeaderCarrier): Future[Option[MessageMetadata]] = {
     messageConnector.getMessageMetadata(messageId).flatMap(  response =>
       response.status match {
         case OK =>
@@ -62,7 +66,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       })
   }
 
-  override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata, name: Name)(implicit hc: HeaderCarrier): Future[Result] = {
+  override def post(queueId: String, nino: Nino, twoWayMessage: TwoWayMessage, dmsMetaData: DmsMetadata, name: Name)
+                   (implicit hc: HeaderCarrier): Future[Result] = {
     val body = createJsonForMessage(randomUUID.toString, twoWayMessage, nino, queueId, name)
     messageConnector.postMessage(body) flatMap { response =>
       handleResponse(twoWayMessage.content, twoWayMessage.subject, response, dmsMetaData)
@@ -73,26 +78,33 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
     implicit hc: HeaderCarrier): Future[Result] =
     postReply(twoWayMessageReply, replyTo, MessageType.Adviser, FormId.Reply)
 
-  override def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)(implicit hc: HeaderCarrier): Future[Result] =
+  override def postCustomerReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String)
+                                (implicit hc: HeaderCarrier): Future[Result] =
     (for {
       metadata <- getMessageMetadata(replyTo)
       queueId <- metadata.get.details.enquiryType
         .fold[Future[String]](Future.failed(new Exception(s"Unable to get DMS queue id for $replyTo")))(Future.successful)
-      enquiryId <- Enquiry(queueId).fold[Future[EnquiryTemplate]](Future.failed(new Exception(s"Unknown $queueId")))(Future.successful)
-      dmsMetaData = DmsMetadata(enquiryId.dmsFormId, metadata.get.recipient.identifier.value, enquiryId.classificationType, enquiryId.businessArea)
-      body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata.get, twoWayMessageReply, replyTo)
+      enquiryId <- Enquiry(queueId)
+        .fold[Future[EnquiryTemplate]](Future.failed(new Exception(s"Unknown $queueId")))(Future.successful)
+      dmsMetaData = DmsMetadata(enquiryId.dmsFormId, metadata.get.recipient.identifier.value,
+        enquiryId.classificationType, enquiryId.businessArea)
+      body = createJsonForReply(randomUUID.toString, MessageType.Customer, FormId.Question, metadata.get,
+        twoWayMessageReply, replyTo)
       postMessageResponse <- messageConnector.postMessage(body)
-      dmsHandleResponse <- handleResponse(twoWayMessageReply.content, metadata.get.subject, postMessageResponse, dmsMetaData)
+      dmsHandleResponse <- handleResponse(twoWayMessageReply.content, metadata.get.subject,
+        postMessageResponse, dmsMetaData)
     } yield dmsHandleResponse) recover handleError
 
-  override def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result] = {
+  override def createDmsSubmission(html: String, response: HttpResponse, dmsMetaData: DmsMetadata)
+                                  (implicit hc: HeaderCarrier): Future[Result] = {
     val dmsSubmission = DmsHtmlSubmission(encodeToBase64String(html), dmsMetaData)
     Future.successful(Created(Json.parse(response.body))).andThen {
       case _ => gformConnector.submitToDmsViaGform(dmsSubmission)
     }
   }
   //TODO: In future fix the either to be evaluate the correct left and right.
-  override def findMessagesBy(messageId: String)(implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]] = {
+  override def findMessagesBy(messageId: String)
+                             (implicit hc: HeaderCarrier): Future[Either[List[ConversationItem], String]] = {
     messageConnector.getMessages(messageId).flatMap {
       response =>
         response.json.validate[List[ConversationItem]].fold(
@@ -102,13 +114,15 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
     }
  }
 
-  override def getMessageContentBy(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]] =
+  override def getMessageContentBy(messageId: String)
+                                  (implicit hc: HeaderCarrier): Future[Option[String]] =
     getMessageContent(messageId).flatMap {
       case Some(content) => Future.successful(Some(content))
       case None => Future.successful(None)
     }
 
-  private def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String, messageType: MessageType, formId: FormId)(
+  private def postReply(twoWayMessageReply: TwoWayMessageReply, replyTo: String,
+                        messageType: MessageType, formId: FormId)(
     implicit hc: HeaderCarrier): Future[Result] =
     (for {
       metadata <- getMessageMetadata(replyTo)
@@ -118,7 +132,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       handleResponse
     } recover handleError
 
-  private def handleResponse(content: String, subject: String, response: HttpResponse, dmsMetaData: DmsMetadata)(implicit hc: HeaderCarrier): Future[Result] =
+  private def handleResponse(content: String, subject: String, response: HttpResponse, dmsMetaData: DmsMetadata)
+                            (implicit hc: HeaderCarrier): Future[Result] =
     response.status match {
       case CREATED =>
         response.json.validate[Identifier].asOpt match {
@@ -132,7 +147,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       case _ => Future.successful(errorResponse(response.status, response.body))
     }
 
-  private def getMessageContent(messageId: String)(implicit hc: HeaderCarrier): Future[Option[String]] = {
+  private def getMessageContent(messageId: String)
+                               (implicit hc: HeaderCarrier): Future[Option[String]] = {
     messageConnector.getMessageContent(messageId).flatMap(response =>
       getContent(response) match {
         case Some(content) => Future successful Some(content)
@@ -140,7 +156,8 @@ class TwoWayMessageServiceImpl @Inject()(messageConnector: MessageConnector, gfo
       })
   }
 //TODO: In future fix the either to be evaluate the correct left and right.
-  override def getConversation(messageId: String, replyType: RenderType.ReplyType)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
+  override def getConversation(messageId: String, replyType: RenderType.ReplyType)
+                              (implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
     findMessagesBy(messageId).flatMap {
       case Right(error) => Future.successful(Left(error))
       case Left(list)   => htmlCreatorService.createConversation(messageId,list,replyType)
