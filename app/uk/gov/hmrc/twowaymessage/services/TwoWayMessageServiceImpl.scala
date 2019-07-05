@@ -160,7 +160,9 @@ servicesConfig: ServicesConfig, htmlCreatorService: HtmlCreatorService)
                               (implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
     findMessagesBy(messageId).flatMap {
       case Right(error) => Future.successful(Left(error))
-      case Left(list)   => htmlCreatorService.createConversation(messageId,list,replyType)
+      case Left(list)   =>
+        val sortedList = htmlCreatorService.sortConversation(messageId,list)
+        htmlCreatorService.createConversation(messageId,sortedList,replyType)
     }
   }
 
@@ -176,7 +178,15 @@ servicesConfig: ServicesConfig, htmlCreatorService: HtmlCreatorService)
   override def getPreviousMessages(messageId: String)(implicit hc: HeaderCarrier): Future[Either[String,Html]] = {
     findMessagesBy(messageId).flatMap {
       case Right(error)   => Future.successful(Left(error))
-      case Left(list)     => htmlCreatorService.createConversation(messageId,list.tail,RenderType.Customer)
+      case Left(list)     =>
+        /* 1) sort the conversation list */
+        val orderedItems = htmlCreatorService.sortConversation(messageId, list)
+        /* 2) drop the head */
+        val previousItems = orderedItems.tail
+        /* 3) get the id of the head of the tail */
+        val nextLatestId = previousItems.head.id
+        /* 2) render the previous messages */
+        htmlCreatorService.createConversation(nextLatestId,previousItems,RenderType.Customer)
     }
   }
 

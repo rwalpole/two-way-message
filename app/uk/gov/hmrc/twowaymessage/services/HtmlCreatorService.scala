@@ -32,6 +32,8 @@ trait HtmlCreatorService {
 
   def createSingleMessageHtml(conversationItem: ConversationItem)
                              (implicit ec: ExecutionContext): Future[Either[String,Html]]
+
+  def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem]
 }
 
 object RenderType {

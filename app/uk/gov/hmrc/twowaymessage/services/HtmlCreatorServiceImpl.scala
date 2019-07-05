@@ -33,18 +33,17 @@ class HtmlCreatorServiceImpl @Inject()()
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-
   override def createConversation(latestMessageId: String, messages: List[ConversationItem], replyType: RenderType.ReplyType)
                                  (implicit ec: ExecutionContext):Future[Either[String,Html]] = {
 
-    Future.successful(Right(HtmlFormat.fill(createConversationList(sortConversation(latestMessageId, messages),replyType))))
+    Future.successful(Right(HtmlFormat.fill(createConversationList(messages,replyType))))
   }
 
   override def createSingleMessageHtml(conversationItem: ConversationItem)(implicit ec: ExecutionContext): Future[Either[String,Html]] = {
     Future.successful(Right(format2wsMessageForCustomer(conversationItem,true)))
   }
 
-  def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem] = {
+  override def sortConversation(latestMessageId: String, messages: List[ConversationItem]): List[ConversationItem] = {
 
     def sortConversation(messageId: String, messages: List[ConversationItem], orderedMsgList: List[ConversationItem]): List[ConversationItem] = {
       val message = messages.find(message => message.id == messageId).get
@@ -74,7 +73,7 @@ class HtmlCreatorServiceImpl @Inject()()
     private def format2wsMessageForAdviser(conversationItem: ConversationItem): Html = {
         val message =
         <p class="message_time faded-text--small">
-          <span>{getAdviserDatesText(conversationItem)}</span>
+          {getAdviserDatesText(conversationItem)}
         </p>
         <p>{val content = conversationItem.content.getOrElse("")
         XML.loadString("<root>" + content.replaceAllLiterally("<br>","<br/>") + "</root>").child}</p><hr/>

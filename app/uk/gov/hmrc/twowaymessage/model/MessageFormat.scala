@@ -20,7 +20,6 @@ import org.apache.commons.codec.binary.Base64
 import org.joda.time.LocalDate
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JodaReads, JodaWrites, Json, Reads, _}
-import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.twowaymessage.model.FormId.FormId
 import uk.gov.hmrc.twowaymessage.model.MessageType.MessageType
 
